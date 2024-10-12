@@ -1,12 +1,9 @@
-# Project Assignment #1 
-### Azure PaaS
+# Azure TuKano
+## Project Assignment #1 - Azure PaaS
 
 * [Assignment Text / Enunciado](scc2425-proj1-tukano)
 
-## Azure TuKano
-
-### Base Source Code :
-* [Tukano](https://github.com/smduarte/scc2425/tree/main/scc2425-tukano)  - Tukano Maven Project;
+* [Base Source Code](https://github.com/smduarte/scc2425/tree/main/scc2425-tukano)  - Tukano Maven Project;
 
 
 ## FAQ
