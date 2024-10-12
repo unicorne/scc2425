@@ -1,17 +1,28 @@
-# Labs
+# Project Assignment #1 
+### Azure PaaS
 
+* [Assignment Text / Enunciado](scc2425-proj1-tukano)
 
-## Support Materials:
-* [Lab 1](lab1)  - Azure WebApp Deployment;
-* [Lab 2](lab2)  - Azure Blobs.
-* [Lab 3](lab3)  - Azure CosmosDB;
-* [Lab 4](lab4)  - Azure Redis Cache (draft);
+## Azure TuKano
 
-<!--
--->
-
-## Project #1:
+### Base Source Code :
 * [Tukano](https://github.com/smduarte/scc2425/tree/main/scc2425-tukano)  - Tukano Maven Project;
-* Enunciado / Project Assigment Text - Soon...
 
-## Project #2:
+
+## FAQ
+
++ **Can I convert the base code to Kotlin?**
+  
+  Yes. But should you?
+
++ **Can I convert to Spring and such?**
+  
+  No. Sorry.
+
++ **Can I work alone?**
+  
+  Depends. Explain why, sending an email stating your case.
+
++ **What is the maximum size of the group?**
+  
+  Up to 2 Humans. Maximum group grade 40, split among the Human and non-Human (AI) members, according to merit. 
