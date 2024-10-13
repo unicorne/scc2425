@@ -10,6 +10,6 @@
 
 ## Project #1
 
-  [Here.](proj1)
+  [Link.](proj1)
 
 ## Project #2:
