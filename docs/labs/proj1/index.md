@@ -24,7 +24,7 @@ If prompted for a login/password, use: `tomcat` and `s3cret`
 
 ### Automate deployment with Maven
 
-1. Update `pom.xml` to include the `tomcat7-maven-plugin`:
+1. Update your projects' `pom.xml` to include the `tomcat7-maven-plugin` in plugins section:
 
 ```xml
 <plugin>
