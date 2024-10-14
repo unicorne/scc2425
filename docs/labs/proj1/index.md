@@ -48,8 +48,14 @@ The plugin was originally for Tomcat7 but also works with Tomcat10.
 
 **Note:** Confirm that the .war is being generated in the `target` folder. Make sure
 that you have in the pom.xml
-```xml<packaging>war</packaging>
+```xml
+<packaging>war</packaging>
 ```
+
+3. Try the application. Check the Tomcap10 manager page:
+
+[http://127.0.0.1:8080/manager/html](http://tomcat:s3cret@127.0.0.1:8080/manager/html)
+
 
 ### Code Example 
 
