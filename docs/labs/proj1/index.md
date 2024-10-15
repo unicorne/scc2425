@@ -56,7 +56,7 @@ that you have in the pom.xml
 <packaging>war</packaging>
 ```
 
-3. Try the application. Check the Tomcap10 manager page:
+3. Try the application. Check the Tomcat10 manager page:
 
 [http://127.0.0.1:8080/manager/html](http://tomcat:s3cret@127.0.0.1:8080/manager/html)
 
