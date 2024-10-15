@@ -62,6 +62,16 @@ that you have in the pom.xml
 The project in Lab1 [scc2425-lab1-code.zip](../lab1/scc2425-lab1-code.zip) was updated
 to include the local deployment option. Check it out.
 
+### Using Properties to avoid embedding secrets in the source.
+
+Check the updated version of the Lab1 sample code [scc2425-lab1-code.zip](../lab1/scc2425-lab1-code.zip) for an example 
+of how to include a properties file in your project.
+
+After loading the properties with `Props.load(propfile)`, you can access the value
+with `System.getProperty(name)`.
+
+The updated ControlResource dumps all the properties that are available.
+
 ## FAQ
 
 + **Can I convert the base code to Kotlin?**
