@@ -43,7 +43,7 @@ If prompted for a login/password, use: `tomcat` and `s3cret`
        </configuration>
 </plugin>
 ```
-**Note:** The login is `maven` `s3cret`and the path must start with `/`
+**Note:** The login is `maven` and `s3cret`and the path must start with `/`
 The plugin was originally for Tomcat7 but also works with Tomcat10.
 
 2. To deploy the web application, execute:
