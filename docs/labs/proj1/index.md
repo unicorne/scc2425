@@ -17,6 +17,7 @@ of Tomcat10, while using remote Azure Resources (BlobStorage, CosmosDB and Redis
 **Note:** 
 
 Make sure nothing is already using port 8080 in your host machine.
+
 In Windows and macOS, make sure you have latest docker version and have `Host Networking` enabled in Settings.
 
 Once Tomcat10 is running, you can access the Tomcat10 manager app via:
