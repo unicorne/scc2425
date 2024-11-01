@@ -10,6 +10,7 @@ import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
 import static utils.DB.getOne;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -79,9 +80,13 @@ public class JavaShorts implements Shorts {
 					
 					var query = format("DELETE Likes l WHERE l.shortId = '%s'", shortId);
 					hibernate.createNativeQuery( query, Likes.class).executeUpdate();
-					
-					JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get() );
-				});
+
+                    try {
+                        JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get() );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
 			});	
 		});
 	}

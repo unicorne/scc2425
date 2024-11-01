@@ -5,12 +5,14 @@ import tukano.api.Blobs;
 import tukano.api.rest.RestBlobs;
 import tukano.impl.JavaBlobs;
 
+import java.io.IOException;
+
 @Singleton
 public class RestBlobsResource extends RestResource implements RestBlobs {
 
 	final Blobs impl;
 	
-	public RestBlobsResource() {
+	public RestBlobsResource() throws IOException {
 		this.impl = JavaBlobs.getInstance();
 	}
 	

@@ -4,11 +4,13 @@ import static java.lang.String.format;
 import static tukano.api.Result.error;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import tukano.api.Blobs;
 import tukano.api.Result;
 import tukano.impl.rest.TukanoRestServer;
+import tukano.impl.storage.AzureBlobStorage;
 import tukano.impl.storage.BlobStorage;
 import tukano.impl.storage.FilesystemStorage;
 import utils.Hash;
@@ -22,14 +24,15 @@ public class JavaBlobs implements Blobs {
 	public String baseURI;
 	private BlobStorage storage;
 	
-	synchronized public static Blobs getInstance() {
+	synchronized public static Blobs getInstance() throws IOException {
 		if( instance == null )
 			instance = new JavaBlobs();
 		return instance;
 	}
 	
-	private JavaBlobs() {
-		storage = new FilesystemStorage();
+	private JavaBlobs() throws IOException {
+		storage = new AzureBlobStorage("blobs");
+//		storage = new FilesystemStorage();
 		baseURI = String.format("%s/%s/", TukanoRestServer.serverURI, Blobs.NAME);
 	}
 	
