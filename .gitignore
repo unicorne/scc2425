@@ -21,7 +21,8 @@ target
 .project
 .settings
 
-scc2425-tukano/src/main/resources/*
-!scc2425-tukano/src/main/resources/.gitkeep
+scc2425-tukano/src/main/resources/azureblob.properties
+*.properties
+**/*.properties
 
 
