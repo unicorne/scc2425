@@ -4,23 +4,33 @@ import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import tukano.api.Result;
+import utils.ResourceUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.function.Consumer;
 
+import static utils.ResourceUtils.loadPropertiesFromResources;
+
 public class AzureBlobStorage implements BlobStorage {
     private static final String propertiesFile = "azureblob.properties";
     private final BlobContainerClient containerClient;
 
-    public AzureBlobStorage(final String containerName) throws IOException {
+    public AzureBlobStorage(final String containerName) {
         Properties props = new Properties();
-        props.load(AzureBlobStorage.class.getClassLoader().getResourceAsStream(propertiesFile));
+        loadPropertiesFromResources(props, propertiesFile);
         containerClient = new BlobContainerClientBuilder()
                 .connectionString(props.getProperty("storageConnectionString"))
                 .containerName(containerName)
                 .buildClient();
+    }
+
+    /**
+     * use this constructor only for test purposes to test interaction with the container client
+     */
+    public AzureBlobStorage(final BlobContainerClient containerClient) {
+        this.containerClient = containerClient;
     }
 
     @Override
