@@ -20,3 +20,9 @@ target
 .classpath
 .project
 .settings
+
+scc2425-tukano/src/main/resources/azureblob.properties
+*.properties
+**/*.properties
+
+
