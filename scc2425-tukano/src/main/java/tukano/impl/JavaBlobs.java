@@ -31,7 +31,7 @@ public class JavaBlobs implements Blobs {
 	}
 	
 	private JavaBlobs() throws IOException {
-		storage = new AzureBlobStorage("blobs");
+		storage = new AzureBlobStorage("shorts");
 //		storage = new FilesystemStorage();
 		baseURI = String.format("%s/%s/", TukanoRestServer.serverURI, Blobs.NAME);
 	}

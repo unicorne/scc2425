@@ -11,12 +11,12 @@ import java.util.Properties;
 import java.util.function.Consumer;
 
 public class AzureBlobStorage implements BlobStorage {
-    private static final String propertiesFile = "src/main/resources/azureblob.properties";
+    private static final String propertiesFile = "azureblob.properties";
     private final BlobContainerClient containerClient;
 
     public AzureBlobStorage(final String containerName) throws IOException {
         Properties props = new Properties();
-        props.load(new FileInputStream(propertiesFile));
+        props.load(AzureBlobStorage.class.getClassLoader().getResourceAsStream(propertiesFile));
         containerClient = new BlobContainerClientBuilder()
                 .connectionString(props.getProperty("storageConnectionString"))
                 .containerName(containerName)
