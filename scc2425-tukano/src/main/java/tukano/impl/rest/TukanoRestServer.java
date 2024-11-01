@@ -2,16 +2,20 @@ package tukano.impl.rest;
 
 import java.net.URI;
 import java.util.logging.Logger;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+
+import jakarta.ws.rs.core.Application;
 
 import tukano.impl.Token;
 import utils.Args;
 import utils.IP;
 
 
-public class TukanoRestServer {
+public class TukanoRestServer extends Application {
 	final private static Logger Log = Logger.getLogger(TukanoRestServer.class.getName());
 
 	static final String INETADDR_ANY = "0.0.0.0";
@@ -20,13 +24,21 @@ public class TukanoRestServer {
 	public static final int PORT = 8080;
 
 	public static String serverURI;
+
+	private Set<Object> singletons = new HashSet<>();
+	private Set<Class<?>> resources = new HashSet<>();
 			
 	static {
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s");
 	}
 	
-	protected TukanoRestServer() {
+	public TukanoRestServer() {
 		serverURI = String.format(SERVER_BASE_URI, IP.hostname(), PORT);
+
+		resources.add(RestBlobsResource.class);
+		resources.add(RestShortsResource.class);
+		resources.add(RestUsersResource.class);
+
 	}
 
 
@@ -51,5 +63,9 @@ public class TukanoRestServer {
 //		Props.load( Args.valueOf("-props", "").split(","));
 		
 		new TukanoRestServer().start();
+	}
+
+	public Set<Class<?>> getClasses(){
+		return resources;
 	}
 }
