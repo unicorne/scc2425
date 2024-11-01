@@ -5,8 +5,8 @@ import java.util.logging.Logger;
 import java.util.Set;
 import java.util.HashSet;
 
-import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 
 import jakarta.ws.rs.core.Application;
 
@@ -25,7 +25,6 @@ public class TukanoRestServer extends Application {
 
 	public static String serverURI;
 
-	private Set<Object> singletons = new HashSet<>();
 	private Set<Class<?>> resources = new HashSet<>();
 			
 	static {
@@ -42,16 +41,14 @@ public class TukanoRestServer extends Application {
 	}
 
 
-	protected void start() throws Exception {
+	protected void start() {
 	
 		ResourceConfig config = new ResourceConfig();
 		
 		config.register(RestBlobsResource.class);
 		config.register(RestUsersResource.class); 
 		config.register(RestShortsResource.class);
-		
-		JdkHttpServerFactory.createHttpServer( URI.create(serverURI.replace(IP.hostname(), INETADDR_ANY)), config);
-		
+
 		Log.info(String.format("Tukano Server ready @ %s\n",  serverURI));
 	}
 	
