@@ -5,6 +5,7 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import tukano.api.Result;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -15,7 +16,7 @@ public class AzureBlobStorage implements BlobStorage {
 
     public AzureBlobStorage(final String containerName) throws IOException {
         Properties props = new Properties();
-        props.load(AzureBlobStorage.class.getResourceAsStream(propertiesFile));
+        props.load(new FileInputStream(propertiesFile));
         containerClient = new BlobContainerClientBuilder()
                 .connectionString(props.getProperty("storageConnectionString"))
                 .containerName(containerName)
