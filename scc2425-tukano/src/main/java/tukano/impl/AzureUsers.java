@@ -6,6 +6,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
+import utils.ResourceUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +17,6 @@ import static tukano.api.Result.*;
 
 public class AzureUsers implements Users {
 
-    private static final String CONNECTION_URL;
-    private static final String DB_KEY;
-    private static final String DATABASE_NAME;
-    private static final String CONTAINER_NAME;
-
     private static Logger Log = Logger.getLogger(AzureUsers.class.getName());
 
     private CosmosClient client;
@@ -30,10 +26,11 @@ public class AzureUsers implements Users {
     public AzureUsers() {
 
         Properties props = new Properties();
-        CONNECTION_URL = props.getProperty("connectionUrl");
-        DB_KEY = props.getProperty("dbKey");
-        DATABASE_NAME = props.getProperty("dbName");
-        CONTAINER_NAME = props.getProperty("dbContainerName");
+        ResourceUtils.loadPropertiesFromResources(props, "cosmosdb.properties");
+        String CONNECTION_URL = props.getProperty("connectionUrl");
+        String DB_KEY = props.getProperty("dbKey");
+        String DATABASE_NAME = props.getProperty("dbName");
+        String CONTAINER_NAME = props.getProperty("dbContainerName");
 
         this.client = new CosmosClientBuilder()
                 .endpoint(CONNECTION_URL)
