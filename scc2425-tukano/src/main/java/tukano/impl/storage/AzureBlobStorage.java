@@ -4,10 +4,7 @@ import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import tukano.api.Result;
-import utils.ResourceUtils;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
 import java.util.function.Consumer;
 
@@ -44,7 +41,7 @@ public class AzureBlobStorage implements BlobStorage {
     @Override
     public Result<Void> delete(String path) {
         var blob = containerClient.getBlobClient(path);
-        return blob.deleteIfExists()  ? Result.ok() : Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        return blob.deleteIfExists() ? Result.ok() : Result.error(Result.ErrorCode.INTERNAL_ERROR);
     }
 
     @Override
