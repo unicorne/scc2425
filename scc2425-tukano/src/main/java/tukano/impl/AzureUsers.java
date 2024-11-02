@@ -9,13 +9,17 @@ import tukano.api.Users;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import static tukano.api.Result.*;
 
 public class AzureUsers implements Users {
 
-
+    private static final String CONNECTION_URL;
+    private static final String DB_KEY;
+    private static final String DATABASE_NAME;
+    private static final String CONTAINER_NAME;
 
     private static Logger Log = Logger.getLogger(AzureUsers.class.getName());
 
@@ -24,6 +28,13 @@ public class AzureUsers implements Users {
     private CosmosContainer container;
 
     public AzureUsers() {
+
+        Properties props = new Properties();
+        CONNECTION_URL = props.getProperty("connectionUrl");
+        DB_KEY = props.getProperty("dbKey");
+        DATABASE_NAME = props.getProperty("dbName");
+        CONTAINER_NAME = props.getProperty("dbContainerName");
+
         this.client = new CosmosClientBuilder()
                 .endpoint(CONNECTION_URL)
                 .key(DB_KEY)
@@ -45,8 +56,8 @@ public class AzureUsers implements Users {
             return error(Result.ErrorCode.BAD_REQUEST);
 
         try {
-            container.createItem(user, new PartitionKey(user.getUserId()), new CosmosItemRequestOptions());
-            return ok(user.getUserId());
+            container.createItem(user, new PartitionKey(user.getId()), new CosmosItemRequestOptions());
+            return ok(user.getId());
         } catch (CosmosException e) {
             return error(Result.ErrorCode.CONFLICT);
         }
@@ -111,6 +122,6 @@ public class AzureUsers implements Users {
     }
 
     private boolean badUserInfo(User user) {
-        return (user.getUserId() == null || user.getPwd() == null || user.getDisplayName() == null || user.getEmail() == null);
+        return (user.getId() == null || user.getPwd() == null || user.getDisplayName() == null || user.getEmail() == null);
     }
 }

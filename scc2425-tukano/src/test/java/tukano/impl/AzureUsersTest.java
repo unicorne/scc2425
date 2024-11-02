@@ -27,12 +27,12 @@ public class AzureUsersTest {
 
     @Test
     public void testCreateUser() {
-        User user = new User("testUser", "password123", "test@example.com", "Test User");
+        User user = new User("1234567", "password123", "test@example.com", "Test User");
 
         Result<String> result = azureUsers.createUser(user);
 
         assertTrue(result.isOK(), "User creation should succeed");
-        assertEquals("testUser", result.value(), "The user ID should match the expected value");
+        assertEquals(user.getId(), result.value(), "The user ID should match the expected value");
     }
 
     @Test
@@ -43,7 +43,7 @@ public class AzureUsersTest {
         Result<User> result = azureUsers.getUser("getUserTest", "securePass");
 
         assertTrue(result.isOK(), "User retrieval should succeed");
-        assertEquals("getUserTest", result.value().getUserId(), "Retrieved user ID should match");
+        assertEquals("getUserTest", result.value().getId(), "Retrieved user ID should match");
         assertEquals("Get User Test", result.value().getDisplayName(), "User display name should match");
     }
 
@@ -68,7 +68,7 @@ public class AzureUsersTest {
         Result<User> result = azureUsers.deleteUser("deleteUserTest", "deletePass");
 
         assertTrue(result.isOK(), "User deletion should succeed");
-        assertEquals("deleteUserTest", result.value().getUserId(), "Deleted user's ID should match");
+        assertEquals("deleteUserTest", result.value().getId(), "Deleted user's ID should match");
 
         Result<User> getResult = azureUsers.getUser("deleteUserTest", "deletePass");
         assertFalse(getResult.isOK(), "Deleted user should not be retrievable");
@@ -86,6 +86,39 @@ public class AzureUsersTest {
 
         assertTrue(result.isOK(), "Search should succeed");
         assertEquals(2, result.value().size(), "Search should return two users");
+    }
+
+
+    @Test
+    public void testDatabaseConnection() {
+        String query = "SELECT * FROM c"; // Simple query to fetch all items from the Users container
+
+        // Using the searchUsers method with an empty string to simulate a basic read from the database
+        Result<List<User>> result = azureUsers.searchUsers("");
+
+        // Check if the result is OK (indicating successful retrieval, even if empty)
+        assertTrue(result.isOK(), "Database connection should allow reading data.");
+    }
+
+    @Test
+    public void testDisplayFirstTwoUsers() {
+        // Retrieve all users
+        Result<List<User>> result = azureUsers.searchUsers("");
+
+        // Verify that the connection and retrieval were successful
+        assertTrue(result.isOK(), "Database connection should allow reading data.");
+
+        List<User> users = result.value();
+
+        // Display the first two users if they exist
+        if (users.size() >= 2) {
+            System.out.println("First user: " + users.get(0));
+            System.out.println("Second user: " + users.get(1));
+        } else if (users.size() == 1) {
+            System.out.println("Only one user available: " + users.get(0));
+        } else {
+            System.out.println("No users available in the database.");
+        }
     }
 }
 
