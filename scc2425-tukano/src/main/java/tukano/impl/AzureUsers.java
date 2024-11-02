@@ -25,22 +25,9 @@ public class AzureUsers implements Users {
 
         Properties props = new Properties();
         ResourceUtils.loadPropertiesFromResources(props, "cosmosdb.properties");
-        String CONNECTION_URL = props.getProperty("connectionUrl");
-        String DB_KEY = props.getProperty("dbKey");
-        String DATABASE_NAME = props.getProperty("dbName");
-        String CONTAINER_NAME = props.getProperty("dbContainerName");
+        String containerName = props.getProperty("userContainerName");
 
-        CosmosClient client = new CosmosClientBuilder()
-                .endpoint(CONNECTION_URL)
-                .key(DB_KEY)
-                .gatewayMode()
-                .consistencyLevel(ConsistencyLevel.SESSION)
-                .connectionSharingAcrossClientsEnabled(true)
-                .contentResponseOnWriteEnabled(true)
-                .buildClient();
-
-        CosmosDatabase database = client.getDatabase(DATABASE_NAME);
-        this.container = database.getContainer(CONTAINER_NAME);
+        this.container = CosmosClientContainer.getContainer(containerName);
     }
 
     @Override
