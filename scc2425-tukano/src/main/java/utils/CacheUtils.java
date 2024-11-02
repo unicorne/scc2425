@@ -18,35 +18,34 @@ public class CacheUtils {
 
     public CacheResult<User> getUserFromCache(String userId) {
         JedisPool pool = RedisCachePool.getCachePool();
-
         try (Jedis jedis = pool.getResource()) {
-            String cacheKey = USER_CACHE_PREFIX + userId;
+            String cacheKey = "user:" + userId;
             String cachedUserData = jedis.get(cacheKey);
 
             if (cachedUserData != null) {
-                User cachedUser = deserializeUser(cachedUserData);
-                return new CacheResult<>(cachedUser, true); // Cache hit
+                // Deserialize only if cache data is found
+                User cachedUser = objectMapper.readValue(cachedUserData, User.class);
+                return new CacheResult<>(cachedUser, true);
             } else {
-                return new CacheResult<>(null, false); // Cache miss
+                return new CacheResult<>(null, false);
             }
         } catch (Exception e) {
-            Log.warning(() -> "Redis cache error: " + e.getMessage());
-            return new CacheResult<>(null, false); // Assume cache miss on error
+            // Handle exceptions appropriately (e.g., log and return a cache miss)
+            return new CacheResult<>(null, false);
         }
     }
 
     public void storeUserInCache(User user) {
         JedisPool pool = RedisCachePool.getCachePool();
-
         try (Jedis jedis = pool.getResource()) {
-            String cacheKey = USER_CACHE_PREFIX + user.getId();
-            String serializedUserData = serializeUser(user);
-
-            jedis.setex(cacheKey, 3600, serializedUserData); // Set a 1-hour TTL for cached data
+            String cacheKey = "user:" + user.getId();
+            String serializedUserData = objectMapper.writeValueAsString(user);
+            jedis.setex(cacheKey, 3600, serializedUserData); // Set 1-hour TTL
         } catch (Exception e) {
-            Log.warning(() -> "Failed to store user in Redis cache: " + e.getMessage());
+            // Handle exceptions appropriately
         }
     }
+
 
     /**
      * Serialize a User object to JSON String.

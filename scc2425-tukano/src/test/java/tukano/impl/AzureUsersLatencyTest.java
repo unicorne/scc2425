@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class AzureUsersPerformanceTest {
+public class AzureUsersLatencyTest {
 
     private final AzureUsers azureUsers = new AzureUsers();
     private final List<User> testUsers = new ArrayList<>();
