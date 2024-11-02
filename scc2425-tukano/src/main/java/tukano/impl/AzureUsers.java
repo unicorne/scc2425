@@ -54,26 +54,28 @@ public class AzureUsers implements Users {
         }
     }
 
-    @Override
-    public Result<User> getUser(String userId, String pwd) {
-        Log.info(() -> String.format("getUser : userId = %s, pwd = %s\n", userId, pwd));
+    public Result<User> getUser(String userId, String pwd, boolean useCache) {
+        Log.info(() -> String.format("getUser : userId = %s, pwd = %s, useCache = %b\n", userId, pwd, useCache));
+
         CacheUtils cacheUtils = new CacheUtils();
 
-        // Attempt to retrieve the user from the cache
-        CacheResult<User> cacheResult = cacheUtils.getUserFromCache(userId);
+        // Attempt to retrieve the user from the cache if caching is enabled
+        if (useCache) {
+            CacheResult<User> cacheResult = cacheUtils.getUserFromCache(userId);
 
-        if (cacheResult.isCacheHit()) {
-            Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
+            if (cacheResult.isCacheHit()) {
+                Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
 
-            User cachedUser = cacheResult.getUser();
-            if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
-                return ok(cachedUser);
-            } else {
-                return error(ErrorCode.FORBIDDEN);
+                User cachedUser = cacheResult.getUser();
+                if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
+                    return ok(cachedUser);
+                } else {
+                    return error(ErrorCode.FORBIDDEN);
+                }
             }
         }
 
-        // Cache miss - proceed with database lookup
+        // Cache miss or cache disabled - proceed with database lookup
         try {
             User user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
             if (user == null) {
@@ -85,14 +87,22 @@ public class AzureUsers implements Users {
                 return error(ErrorCode.FORBIDDEN);
             }
 
-            // Store the retrieved user in cache
-            cacheUtils.storeUserInCache(user);
+            // Store the retrieved user in cache if caching is enabled
+            if (useCache) {
+                cacheUtils.storeUserInCache(user);
+            }
             return ok(user);
 
         } catch (CosmosException e) {
             Log.warning(() -> String.format("Error getting User with Id %s\n%s", userId, e.getMessage()));
             return error(Result.ErrorCode.NOT_FOUND);
         }
+    }
+
+    // Original getUser method - default behavior with caching enabled
+    @Override
+    public Result<User> getUser(String userId, String pwd) {
+        return getUser(userId, pwd, true); // Default to using cache
     }
 
 
