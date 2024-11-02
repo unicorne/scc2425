@@ -7,6 +7,9 @@ import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
 import utils.ResourceUtils;
+import utils.CacheUtils.CacheResult;
+import utils.CacheUtils;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,28 +52,49 @@ public class AzureUsers implements Users {
             Log.warning(() -> String.format("Error creating User %s\n%s", user, e.getMessage()));
             return error(Result.ErrorCode.CONFLICT);
         }
-}
+    }
 
     @Override
     public Result<User> getUser(String userId, String pwd) {
         Log.info(() -> String.format("getUser : userId = %s, pwd = %s\n", userId, pwd));
+        CacheUtils cacheUtils = new CacheUtils();
 
+        // Attempt to retrieve the user from the cache
+        CacheResult<User> cacheResult = cacheUtils.getUserFromCache(userId);
+
+        if (cacheResult.isCacheHit()) {
+            Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
+
+            User cachedUser = cacheResult.getUser();
+            if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
+                return ok(cachedUser);
+            } else {
+                return error(ErrorCode.FORBIDDEN);
+            }
+        }
+
+        // Cache miss - proceed with database lookup
         try {
             User user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
-            if(user == null){
+            if (user == null) {
                 Log.warning(() -> String.format("Error getting User with Id %s. Null result\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
-            if(!user.getPwd().equals(pwd)){
+            if (!user.getPwd().equals(pwd)) {
                 Log.warning(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.FORBIDDEN);
             }
+
+            // Store the retrieved user in cache
+            cacheUtils.storeUserInCache(user);
             return ok(user);
+
         } catch (CosmosException e) {
             Log.warning(() -> String.format("Error getting User with Id %s\n%s", userId, e.getMessage()));
             return error(Result.ErrorCode.NOT_FOUND);
         }
     }
+
 
     @Override
     public Result<User> updateUser(String userId, String pwd, User newUserInfo) {
