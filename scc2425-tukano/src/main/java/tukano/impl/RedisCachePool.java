@@ -1,11 +1,9 @@
 package tukano.impl;
-import io.netty.internal.tcnative.SSL;
+
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import utils.ResourceUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 public class RedisCachePool {

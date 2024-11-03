@@ -11,7 +11,7 @@ import java.util.Random;
 
 public class AzureUsersLatencyTest {
 
-    private final AzureUsers azureUsers = new AzureUsers();
+    private final AzureUsers azureUsers = AzureUsers.getInstance();
     private final List<User> testUsers = new ArrayList<>();
     private final Random random = new Random();
 

@@ -1,15 +1,18 @@
 package tukano.impl;
 
-import com.azure.cosmos.*;
-import com.azure.cosmos.models.*;
+import com.azure.cosmos.CosmosContainer;
+import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.models.CosmosItemRequestOptions;
+import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
-import utils.ResourceUtils;
-import utils.CacheUtils.CacheResult;
 import utils.CacheUtils;
-
+import utils.CacheUtils.CacheResult;
+import utils.ResourceUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +38,8 @@ public class AzureUsers implements Users {
         this.container = CosmosClientContainer.getContainer(containerName);
     }
 
-    public static AzureUsers getInstance(){
-        if (instance == null){
+    public static AzureUsers getInstance() {
+        if (instance == null) {
             instance = new AzureUsers();
         }
         return instance;
@@ -52,7 +55,7 @@ public class AzureUsers implements Users {
         try {
             CosmosItemResponse<User> response = container.createItem(user, new PartitionKey(user.getId()), new CosmosItemRequestOptions());
             User item = response.getItem();
-            if(item == null){
+            if (item == null) {
                 Log.severe(() -> String.format("Error creating User %s\n", user));
                 return error(Result.ErrorCode.INTERNAL_ERROR);
             }
@@ -87,11 +90,11 @@ public class AzureUsers implements Users {
         // Cache miss or cache disabled - proceed with database lookup
         try {
             User user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
-            if(user == null){
+            if (user == null) {
                 Log.severe(() -> String.format("Error getting User with Id %s. Null result\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
-            if(!user.getPwd().equals(pwd)){
+            if (!user.getPwd().equals(pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
@@ -121,18 +124,18 @@ public class AzureUsers implements Users {
 
         try {
             User existingUser = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
-            if (existingUser == null && existingUser.getPwd().equals(pwd)) {
+            if (existingUser == null) {
                 Log.severe(() -> String.format("Could not find user to update. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
             User updatedUser = existingUser.updateFrom(newUserInfo);
             CosmosItemResponse<User> response = container.replaceItem(updatedUser, userId, new PartitionKey(userId), new CosmosItemRequestOptions());
             User item = response.getItem();
-            if(item == null){
+            if (item == null) {
                 Log.severe(() -> String.format("Error updating User with Id %s\n", userId));
                 return error(ErrorCode.INTERNAL_ERROR);
             }
-            if(!item.getPwd().equals(pwd)){
+            if (!item.getPwd().equals(pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
@@ -153,7 +156,7 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Could not find user to delete. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
-            if(!user.getPwd().equals(pwd)){
+            if (!user.getPwd().equals(pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }

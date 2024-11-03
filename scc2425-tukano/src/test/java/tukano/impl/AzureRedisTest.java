@@ -22,7 +22,7 @@ public class AzureRedisTest {
     @BeforeAll
     public static void setUp() {
         // Initialize the AzureUsers instance and clear the Redis cache before testing
-        azureUsers = new AzureUsers();
+        azureUsers = AzureUsers.getInstance();
         JedisPool jedisPool = getCachePool();
         try (Jedis jedis = jedisPool.getResource()) {
              // Clear all data in Redis to ensure a clean state for test
