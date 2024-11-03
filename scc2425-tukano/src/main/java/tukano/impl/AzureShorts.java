@@ -10,6 +10,8 @@ import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
 import utils.ResourceUtils;
+import utils.CacheUtils;
+import utils.CacheUtils.CacheResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +79,19 @@ public class AzureShorts implements Shorts {
         if (shortId == null)
             return error(BAD_REQUEST);
 
+        CacheUtils cacheUtils = new CacheUtils();
+
+        // Attempt to retrieve the short from the cache
+        CacheResult<Short> cacheResult = cacheUtils.getShortFromCache(shortId);
+        try {
+            if (cacheResult.isCacheHit()) {
+                Log.info(() -> String.format("Cache hit for short with Id %s\n", shortId));
+                return ok(cacheResult.getUser()); // Return the cached Short with likes already counted
+            }
+        } catch (Exception e) {
+                Log.severe("Error getting cache hit: " + e.getMessage());
+            }
+
         try {
             // Get the short
             var short_response = container.readItem(shortId, new PartitionKey(shortId), Short.class);
@@ -87,7 +102,12 @@ public class AzureShorts implements Shorts {
             var likes_response = container.queryItems(query, new CosmosQueryRequestOptions(), Long.class);
             long likesCount = likes_response.iterator().next();
 
-            return ok(shrt.copyWithLikes_And_Token(likesCount));
+            // Attach likes count and token, then cache the result
+            var shortWithLikes = shrt.copyWithLikes_And_Token(likesCount);
+            cacheUtils.storeShortInCache(shortWithLikes);
+
+            return ok(shortWithLikes);
+
         } catch (Exception e) {
             Log.severe("Error getting short: " + e.getMessage());
             return error(NOT_FOUND);

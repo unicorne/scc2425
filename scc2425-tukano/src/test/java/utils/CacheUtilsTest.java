@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import tukano.api.User;
+import tukano.api.Short;
 import tukano.impl.RedisCachePool;
 import utils.CacheUtils;
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,5 +75,64 @@ public class CacheUtilsTest {
         // Assert that the cache hit flag is false and the retrieved user is null
         assertFalse(cacheResult.isCacheHit(), "Cache should miss for a non-existent user.");
         assertNull(cacheResult.getUser(), "Retrieved user should be null for a cache miss.");
+    }
+
+    @Test
+    public void testStoreShortInCache() {
+        // Prepare a test Short object
+        Short testShort = new Short();
+        testShort.setId("testShort123");
+        testShort.setOwnerId("owner456");
+        testShort.setBlobUrl("http://example.com/blob.mp4");
+        testShort.setTimestamp(System.currentTimeMillis());
+        testShort.setTotalLikes(100);
+
+        // Store the Short in cache
+        cacheUtils.storeShortInCache(testShort);
+
+        // Check that the Short data exists in Redis
+        JedisPool pool = RedisCachePool.getCachePool();
+        try (Jedis jedis = pool.getResource()) {
+            String cacheKey = "short:" + testShort.getId();
+            String cachedShortData = jedis.get(cacheKey);
+
+            assertNotNull(cachedShortData, "Short should be stored in Redis cache.");
+            // Optionally, further checks can be added if you serialize the short to JSON and check the structure
+        }
+    }
+
+    @Test
+    public void testGetShortFromCache_Hit() {
+        // Prepare a test Short object
+        Short testShort = new Short();
+        testShort.setId("testShort123");
+        testShort.setOwnerId("owner456");
+        testShort.setBlobUrl("http://example.com/blob.mp4");
+        testShort.setTimestamp(System.currentTimeMillis());
+        testShort.setTotalLikes(100);
+
+        // Store the Short in cache to simulate a cache hit
+        cacheUtils.storeShortInCache(testShort);
+
+        // Attempt to retrieve the Short from cache
+        CacheUtils.CacheResult<Short> cacheResult = cacheUtils.getShortFromCache(testShort.getId());
+
+        // Assert that the cache hit flag is true and the Short is correctly retrieved
+        assertTrue(cacheResult.isCacheHit(), "Cache should have a hit for the stored Short.");
+        assertNotNull(cacheResult.getUser(), "Retrieved Short should not be null.");
+        assertEquals(testShort.getId(), cacheResult.getUser().getId(), "Short ID should match the cached Short.");
+        assertEquals(testShort.getOwnerId(), cacheResult.getUser().getOwnerId(), "Short owner ID should match the cached Short.");
+        assertEquals(testShort.getBlobUrl(), cacheResult.getUser().getBlobUrl(), "Short blob URL should match the cached Short.");
+        assertEquals(testShort.getTotalLikes(), cacheResult.getUser().getTotalLikes(), "Short total likes should match the cached Short.");
+    }
+
+    @Test
+    public void testGetShortFromCache_Miss() {
+        // Attempt to retrieve a Short that doesn't exist in cache
+        CacheUtils.CacheResult<Short> cacheResult = cacheUtils.getShortFromCache("nonExistentShort");
+
+        // Assert that the cache hit flag is false and the retrieved Short is null
+        assertFalse(cacheResult.isCacheHit(), "Cache should miss for a non-existent Short.");
+        assertNull(cacheResult.getUser(), "Retrieved Short should be null for a cache miss.");
     }
 }

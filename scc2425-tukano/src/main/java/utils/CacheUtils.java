@@ -6,6 +6,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import tukano.impl.RedisCachePool;
 import tukano.api.User;
+import tukano.api.Short;
 
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -14,6 +15,7 @@ public class CacheUtils {
 
     private static final Logger Log = Logger.getLogger(CacheUtils.class.getName());
     private static final String USER_CACHE_PREFIX = "user:";
+    private static final String SHORT_CACHE_PREFIX = "short:";
     private static final ObjectMapper objectMapper = new ObjectMapper(); // Jackson ObjectMapper for JSON
 
     public CacheResult<User> getUserFromCache(String userId) {
@@ -43,6 +45,38 @@ public class CacheUtils {
             jedis.setex(cacheKey, 3600, serializedUserData); // Set 1-hour TTL
         } catch (Exception e) {
             // Handle exceptions appropriately
+        }
+    }
+
+    // Method to retrieve Short from cache
+    public CacheResult<Short> getShortFromCache(String shortId) {
+        JedisPool pool = RedisCachePool.getCachePool();
+        try (Jedis jedis = pool.getResource()) {
+            String cacheKey = SHORT_CACHE_PREFIX + shortId;
+            String cachedShortData = jedis.get(cacheKey);
+
+            if (cachedShortData != null) {
+                // Deserialize only if cache data is found
+                Short cachedShort = objectMapper.readValue(cachedShortData, Short.class);
+                return new CacheResult<>(cachedShort, true);
+            } else {
+                return new CacheResult<>(null, false);
+            }
+        } catch (Exception e) {
+            Log.warning("Failed to retrieve Short from cache: " + e.getMessage());
+            return new CacheResult<>(null, false);
+        }
+    }
+
+    // Method to store Short in cache
+    public void storeShortInCache(Short shrt) {
+        JedisPool pool = RedisCachePool.getCachePool();
+        try (Jedis jedis = pool.getResource()) {
+            String cacheKey = SHORT_CACHE_PREFIX + shrt.getId();
+            String serializedShortData = objectMapper.writeValueAsString(shrt);
+            jedis.setex(cacheKey, 3600, serializedShortData); // Set 1-hour TTL
+        } catch (Exception e) {
+            Log.warning("Failed to store Short in cache: " + e.getMessage());
         }
     }
 
