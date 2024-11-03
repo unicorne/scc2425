@@ -3,14 +3,21 @@ package tukano.impl.storage;
 import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
+import com.azure.storage.blob.models.BlobStorageException;
 import tukano.api.Result;
+import tukano.impl.JavaBlobs;
+import utils.Hash;
+import utils.Hex;
 
 import java.util.Properties;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static utils.ResourceUtils.loadPropertiesFromResources;
 
 public class AzureBlobStorage implements BlobStorage {
+    private static final Logger Log = Logger.getLogger(AzureBlobStorage.class.getName());
     private static final String propertiesFile = "azureblob.properties";
     private final BlobContainerClient containerClient;
 
@@ -55,19 +62,25 @@ public class AzureBlobStorage implements BlobStorage {
     @Override
     public Result<byte[]> read(String path) {
         var blob = containerClient.getBlobClient(path);
-        byte[] data = blob.downloadContent().toBytes();
-        return data != null ? Result.ok(data) : Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        if (!blob.exists()){
+            return Result.error(Result.ErrorCode.NOT_FOUND);
+        }
+        try {
+            BinaryData data = blob.downloadContent();
+            return Result.ok(data.toBytes());
+        } catch (Exception e) {
+            Log.severe(() -> format("Error reading blob %s\n%s", path, e.getMessage()));
+            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        }
     }
 
     @Override
     public Result<Void> read(String path, Consumer<byte[]> sink) {
-        var blob = containerClient.getBlobClient(path);
-        byte[] data = blob.downloadContent().toBytes();
-        if (data != null) {
-            sink.accept(data);
-            return Result.ok();
-        } else {
-            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        var result = read(path);
+        if(!result.isOK()){
+            return Result.error(result.error());
         }
+        sink.accept(result.value());
+        return Result.ok();
     }
 }
