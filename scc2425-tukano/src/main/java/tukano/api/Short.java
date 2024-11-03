@@ -3,6 +3,7 @@ package tukano.api;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import tukano.impl.Token;
+import tukano.impl.data.ShortContainerType;
 
 /**
  * Represents a Short video uploaded by an user.
@@ -22,6 +23,7 @@ public class Short {
 	String blobUrl;
 	long timestamp;
 	int totalLikes;
+	ShortContainerType type = ShortContainerType.SHORT;
 
 	public Short() {}
 	
@@ -76,6 +78,14 @@ public class Short {
 
 	public void setTotalLikes(int totalLikes) {
 		this.totalLikes = totalLikes;
+	}
+
+	public ShortContainerType getType() {
+		return type;
+	}
+
+	public void setType(ShortContainerType type) {
+		this.type = type;
 	}
 
 	@Override

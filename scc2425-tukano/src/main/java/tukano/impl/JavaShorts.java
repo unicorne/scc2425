@@ -105,7 +105,8 @@ public class JavaShorts implements Shorts {
 	
 		
 		return errorOrResult( okUser(userId1, password), user -> {
-			var f = new Following(userId1, userId2);
+			String followId = format("%s+%s", userId1, userId2);
+			var f = new Following(followId, userId1, userId2);
 			return errorOrVoid( okUser( userId2), isFollowing ? DB.insertOne( f ) : DB.deleteOne( f ));	
 		});			
 	}
@@ -124,7 +125,8 @@ public class JavaShorts implements Shorts {
 
 		
 		return errorOrResult( getShort(shortId), shrt -> {
-			var l = new Likes(userId, shortId, shrt.getOwnerId());
+			String likeId = format("%s+%s", userId, shortId);
+			var l = new Likes(likeId, userId, shortId, shrt.getOwnerId());
 			return errorOrVoid( okUser( userId, password), isLiked ? DB.insertOne( l ) : DB.deleteOne( l ));	
 		});
 	}

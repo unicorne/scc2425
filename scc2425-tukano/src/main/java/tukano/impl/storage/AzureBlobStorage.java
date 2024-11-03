@@ -14,13 +14,21 @@ public class AzureBlobStorage implements BlobStorage {
     private static final String propertiesFile = "azureblob.properties";
     private final BlobContainerClient containerClient;
 
-    public AzureBlobStorage(final String containerName) {
+    private static AzureBlobStorage instance;
+
+    private AzureBlobStorage() {
         Properties props = new Properties();
         loadPropertiesFromResources(props, propertiesFile);
         containerClient = new BlobContainerClientBuilder()
                 .connectionString(props.getProperty("storageConnectionString"))
-                .containerName(containerName)
+                .containerName(props.getProperty("blobContainerName"))
                 .buildClient();
+    }
+
+    public static AzureBlobStorage getInstance() {
+        if (instance == null)
+            instance = new AzureBlobStorage();
+        return instance;
     }
 
     /**
@@ -41,7 +49,7 @@ public class AzureBlobStorage implements BlobStorage {
     @Override
     public Result<Void> delete(String path) {
         var blob = containerClient.getBlobClient(path);
-        return blob.deleteIfExists() ? Result.ok() : Result.error(Result.ErrorCode.INTERNAL_ERROR);
+        return blob.deleteIfExists() ? Result.ok() : Result.error(Result.ErrorCode.NOT_FOUND);
     }
 
     @Override

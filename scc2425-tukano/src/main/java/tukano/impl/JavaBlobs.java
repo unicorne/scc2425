@@ -18,10 +18,10 @@ import static tukano.api.Result.error;
 public class JavaBlobs implements Blobs {
 
     private static Blobs instance;
-    private static Logger Log = Logger.getLogger(JavaBlobs.class.getName());
+    private static final Logger Log = Logger.getLogger(JavaBlobs.class.getName());
 
     public String baseURI;
-    private BlobStorage storage;
+    private final BlobStorage storage;
 
     synchronized public static Blobs getInstance() throws IOException {
         if (instance == null)
@@ -30,7 +30,7 @@ public class JavaBlobs implements Blobs {
     }
 
     private JavaBlobs() {
-        storage = new AzureBlobStorage("shorts");
+        storage = AzureBlobStorage.getInstance();
         baseURI = String.format("%s/%s/", TukanoRestServer.serverURI, Blobs.NAME);
     }
 

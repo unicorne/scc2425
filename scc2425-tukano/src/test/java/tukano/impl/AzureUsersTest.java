@@ -18,7 +18,7 @@ public class AzureUsersTest {
 
     @BeforeAll
     public static void setUp() {
-        azureUsers = new AzureUsers();
+        azureUsers = AzureUsers.getInstance();
     }
 
     @AfterEach

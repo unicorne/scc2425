@@ -11,7 +11,7 @@ import java.util.List;
 @Singleton
 public class RestShortsResource extends RestResource implements RestShorts {
 
-    static final Shorts impl = new AzureShorts();
+    static final Shorts impl = AzureShorts.getInstance();
 
     @Override
     public Short createShort(String userId, String password) {

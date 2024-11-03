@@ -8,7 +8,12 @@ import jakarta.persistence.Id;
 @Entity
 public class Following{
 
-	@Id 
+	@Id
+	String id;
+
+	ShortContainerType type = ShortContainerType.FOLLOWING;
+
+	@Id
 	String follower;
 	
 	@Id 
@@ -16,8 +21,9 @@ public class Following{
 
 	Following() {}
 
-	public Following(String follower, String followee) {
+	public Following(final String id, final String follower, final String followee) {
 		super();
+		this.id = id;
 		this.follower = follower;
 		this.followee = followee;
 	}
@@ -38,6 +44,22 @@ public class Following{
 		this.followee = followee;
 	}
 
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public ShortContainerType getType() {
+		return type;
+	}
+
+	public void setType(ShortContainerType type) {
+		this.type = type;
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(followee, follower);
@@ -52,12 +74,12 @@ public class Following{
 		if (getClass() != obj.getClass())
 			return false;
 		Following other = (Following) obj;
-		return Objects.equals(followee, other.followee) && Objects.equals(follower, other.follower);
+		return Objects.equals(id, other.id) && Objects.equals(followee, other.followee) && Objects.equals(follower, other.follower);
 	}
 
 	@Override
 	public String toString() {
-		return "Following [follower=" + follower + ", followee=" + followee + "]";
+		return "Following [id=" + id + ",follower=" + follower + ", followee=" + followee + "]";
 	}
 	
 	

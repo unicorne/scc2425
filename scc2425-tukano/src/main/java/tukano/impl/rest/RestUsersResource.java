@@ -13,7 +13,7 @@ public class RestUsersResource extends RestResource implements RestUsers {
 
 	final Users impl;
 	public RestUsersResource() {
-		this.impl = new AzureUsers();
+		this.impl = AzureUsers.getInstance();
 	}
 	
 	@Override
