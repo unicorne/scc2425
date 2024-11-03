@@ -17,6 +17,7 @@ import utils.ResourceUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import static tukano.api.Result.*;
@@ -65,11 +66,11 @@ public class AzureUsers implements Users {
             return error(Result.ErrorCode.CONFLICT);
         }
     }
-
     public Result<User> getUser(String userId, String pwd, boolean useCache) {
         Log.info(() -> String.format("getUser : userId = %s, pwd = %s, useCache = %b\n", userId, pwd, useCache));
 
         CacheUtils cacheUtils = new CacheUtils();
+        CookieCacheUtils cookieCacheUtils = new CookieCacheUtils();
 
         // Attempt to retrieve the user from the cache if caching is enabled
         if (useCache) {
@@ -79,10 +80,18 @@ public class AzureUsers implements Users {
                 Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
 
                 User cachedUser = cacheResult.getUser();
-                if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
-                    return ok(cachedUser);
-                } else {
-                    return error(ErrorCode.FORBIDDEN);
+                if (cachedUser != null) {
+                    // Check session cookie if present
+                    String cachedSessionCookie = cookieCacheUtils.getSessionCookie(userId);
+                    if (cachedUser.getCookie().equals(cachedSessionCookie)) {
+                        return ok(cachedUser); // Access granted based on session cookie
+                    }
+                    // Fallback to password check if session cookie is not valid
+                    if (cachedUser.getPwd().equals(pwd)) {
+                        return ok(cachedUser);
+                    } else {
+                        return error(ErrorCode.FORBIDDEN);
+                    }
                 }
             }
         }
@@ -99,6 +108,11 @@ public class AzureUsers implements Users {
                 return error(ErrorCode.UNAUTHORIZED);
             }
 
+            // Generate session cookie and set it for the user
+            String sessionCookie = UUID.randomUUID().toString();
+            user.setCookie(sessionCookie);
+            cookieCacheUtils.storeSessionCookie(userId, sessionCookie); // Store session in cache
+
             // Store the retrieved user in cache if caching is enabled
             if (useCache) {
                 cacheUtils.storeUserInCache(user);
@@ -110,6 +124,7 @@ public class AzureUsers implements Users {
             return error(Result.ErrorCode.NOT_FOUND);
         }
     }
+
 
     // Original getUser method - default behavior with caching enabled
     @Override

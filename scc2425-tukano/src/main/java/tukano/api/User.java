@@ -11,14 +11,17 @@ public class User {
 	private String pwd;
 	private String email;	
 	private String displayName;
+	private String cookie;
 
 	public User() {}
-	
+
+
 	public User(String id, String pwd, String email, String displayName) {
 		this.pwd = pwd;
 		this.email = email;
 		this.id = id;
 		this.displayName = displayName;
+		this.cookie = "";
 	}
 
 	public String getId() {
@@ -45,6 +48,12 @@ public class User {
 	public void setDisplayName(String displayName) {
 		this.displayName = displayName;
 	}
+	public String getCookie() {
+		return cookie;
+	}
+	public void setCookie(String cookie) {
+		this.cookie = cookie;
+	}
 	
 	public String userId() {
 		return id;
@@ -60,6 +69,10 @@ public class User {
 	
 	public String displayName() {
 		return displayName;
+	}
+
+	public String cookie() {
+		return cookie;
 	}
 	
 	@Override

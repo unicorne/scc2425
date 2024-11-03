@@ -2,8 +2,6 @@ package tukano.impl;
 
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.FeedResponse;
-import com.azure.cosmos.util.CosmosPagedIterable;
 import tukano.api.*;
 import tukano.api.Short;
 import tukano.impl.data.Following;
@@ -11,7 +9,6 @@ import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
 import utils.ResourceUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -276,6 +273,7 @@ public class AzureShorts implements Shorts {
             return error(INTERNAL_ERROR);
         }
     }
+
 
     protected Result<User> okUser(String userId, String pwd) {
         return AzureUsers.getInstance().getUser(userId, pwd);
