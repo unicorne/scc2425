@@ -78,7 +78,7 @@ public class AzureUsers implements Users {
             if (cacheResult.isCacheHit()) {
                 Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
 
-                User cachedUser = cacheResult.getUser();
+                User cachedUser = cacheResult.getItem();
                 if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
                     return ok(cachedUser);
                 } else {

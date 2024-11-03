@@ -117,7 +117,7 @@ public class AzureShortsTest {
         Result<Void> likeResult = shorts.like(testShortId, testUserId2, true, password);
         assertTrue(likeResult.isOK());
 
-        Result<Short> shortResult = shorts.getShort(testShortId);
+        Result<Short> shortResult = shorts.getShort(testShortId, false);
         assertTrue(shortResult.isOK());
         assertEquals(1, shortResult.value().getTotalLikes());
 
@@ -129,7 +129,7 @@ public class AzureShortsTest {
         Result<Void> unlikeResult = shorts.like(testShortId, testUserId2, false, password);
         assertTrue(unlikeResult.isOK());
 
-        shortResult = shorts.getShort(testShortId);
+        shortResult = shorts.getShort(testShortId, false);
         assertEquals(0, shortResult.value().getTotalLikes());
     }
 
@@ -157,7 +157,7 @@ public class AzureShortsTest {
         Result<Void> deleteResult = shorts.deleteShort(testShortId, password);
 //        assertTrue(deleteResult.isOK());
 
-        Result<Short> getResult = shorts.getShort(testShortId);
+        Result<Short> getResult = shorts.getShort(testShortId, false);
         assertEquals(NOT_FOUND, getResult.error());
     }
 
@@ -169,12 +169,12 @@ public class AzureShortsTest {
         assertEquals(UNAUTHORIZED, createWithBadPwd.error());
 
         // Test non-existent short
-        Result<Short> getNonExistent = shorts.getShort("non-existent-id");
+        Result<Short> getNonExistent = shorts.getShort("non-existent-id", false);
         assertFalse(getNonExistent.isOK());
         assertEquals(NOT_FOUND, getNonExistent.error());
 
         // Test null shortId
-        Result<Short> getNullShort = shorts.getShort(null);
+        Result<Short> getNullShort = shorts.getShort(null, false);
         assertFalse(getNullShort.isOK());
         assertEquals(BAD_REQUEST, getNullShort.error());
     }

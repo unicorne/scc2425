@@ -10,6 +10,8 @@ import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
 import utils.ResourceUtils;
+import utils.CacheUtils;
+import utils.CacheUtils.CacheResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,21 +75,54 @@ public class AzureShorts implements Shorts {
     @Override
     public Result<Short> getShort(String shortId) {
         Log.info(() -> format("getShort : shortId = %s\n", shortId));
+        return getShort(shortId, true);
+    }
 
-        if (shortId == null)
+    public Result<Short> getShort(String shortId, boolean useCache) {
+        Log.info(() -> String.format("getShort : shortId = %s\n", shortId));
+
+        if (shortId == null) {
             return error(BAD_REQUEST);
+        }
 
+        CacheUtils cacheUtils = new CacheUtils();
+
+        // Attempt to retrieve the short from the cache if caching is enabled
+        if (useCache) {
+            CacheResult<Short> cacheResult = cacheUtils.getShortFromCache(shortId);
+
+            if (cacheResult.isCacheHit()) {
+                Log.info(() -> String.format("Cache hit for short with Id %s\n", shortId));
+                return ok(cacheResult.getItem());
+            }
+        }
+
+        // Cache miss or cache disabled - proceed with database lookup
         try {
-            // Get the short
-            var short_response = container.readItem(shortId, new PartitionKey(shortId), Short.class);
-            var shrt = short_response.getItem();
+            // Get the short item from database
+            var shortResponse = container.readItem(shortId, new PartitionKey(shortId), Short.class);
+            Short shrt = shortResponse.getItem();
+
+            if (shrt == null) {
+                Log.severe(() -> String.format("Error getting Short with Id %s. Null result\n", shortId));
+                return error(NOT_FOUND);
+            }
 
             // Count likes using a query
             String query = "SELECT VALUE COUNT(1) FROM c WHERE c.type = 'LIKE' AND c.shortId = '" + shortId + "'";
-            var likes_response = container.queryItems(query, new CosmosQueryRequestOptions(), Long.class);
-            long likesCount = likes_response.iterator().next();
+            var likesResponse = container.queryItems(query, new CosmosQueryRequestOptions(), Long.class);
+            long likesCount = likesResponse.iterator().next();
 
-            return ok(shrt.copyWithLikes_And_Token(likesCount));
+            // Create a new Short instance with likes and token
+            Short shortWithLikes = shrt.copyWithLikes_And_Token(likesCount);
+
+            // Store the retrieved short in cache if caching is enabled
+            if (useCache) {
+                cacheUtils.storeShortInCache(shortWithLikes);
+            }
+
+            return ok(shortWithLikes);
+
         } catch (Exception e) {
             Log.severe("Error getting short: " + e.getMessage());
             return error(NOT_FOUND);
@@ -98,7 +133,7 @@ public class AzureShorts implements Shorts {
     public Result<Void> deleteShort(String shortId, String password) {
         Log.info(() -> format("deleteShort : shortId = %s, pwd = %s\n", shortId, password));
 
-        return errorOrResult(getShort(shortId), shrt ->
+        return errorOrResult(getShort(shortId, false), shrt ->
                 errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
                     try {
                         // Delete the short
@@ -181,7 +216,7 @@ public class AzureShorts implements Shorts {
         Log.info(() -> format("like : shortId = %s, userId = %s, isLiked = %s, pwd = %s\n",
                 shortId, userId, isLiked, password));
 
-        return errorOrResult(getShort(shortId), shrt -> {
+        return errorOrResult(getShort(shortId, false), shrt -> {
             try {
                 String likeId = format("%s-%s", userId, shortId);
                 if (isLiked) {
@@ -202,7 +237,7 @@ public class AzureShorts implements Shorts {
     public Result<List<String>> likes(String shortId, String password) {
         Log.info(() -> format("likes : shortId = %s, pwd = %s\n", shortId, password));
 
-        return errorOrResult(getShort(shortId), shrt ->
+        return errorOrResult(getShort(shortId, false), shrt ->
                 errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
                     String query = "SELECT * FROM c WHERE c.type = 'LIKE' AND c.shortId = '" + shortId + "'";
                     try {
