@@ -7,6 +7,9 @@ import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
 import utils.ResourceUtils;
+import utils.CacheUtils.CacheResult;
+import utils.CacheUtils;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,12 +61,30 @@ public class AzureUsers implements Users {
             Log.severe(() -> String.format("Error creating User %s\n%s", user, e.getMessage()));
             return error(Result.ErrorCode.CONFLICT);
         }
-}
+    }
 
-    @Override
-    public Result<User> getUser(String userId, String pwd) {
-        Log.info(() -> String.format("getUser : userId = %s, pwd = %s\n", userId, pwd));
+    public Result<User> getUser(String userId, String pwd, boolean useCache) {
+        Log.info(() -> String.format("getUser : userId = %s, pwd = %s, useCache = %b\n", userId, pwd, useCache));
 
+        CacheUtils cacheUtils = new CacheUtils();
+
+        // Attempt to retrieve the user from the cache if caching is enabled
+        if (useCache) {
+            CacheResult<User> cacheResult = cacheUtils.getUserFromCache(userId);
+
+            if (cacheResult.isCacheHit()) {
+                Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
+
+                User cachedUser = cacheResult.getUser();
+                if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
+                    return ok(cachedUser);
+                } else {
+                    return error(ErrorCode.FORBIDDEN);
+                }
+            }
+        }
+
+        // Cache miss or cache disabled - proceed with database lookup
         try {
             User user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
             if(user == null){
@@ -74,12 +95,25 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
+
+            // Store the retrieved user in cache if caching is enabled
+            if (useCache) {
+                cacheUtils.storeUserInCache(user);
+            }
             return ok(user);
+
         } catch (CosmosException e) {
             Log.severe(() -> String.format("Error getting User with Id %s\n%s", userId, e.getMessage()));
             return error(Result.ErrorCode.NOT_FOUND);
         }
     }
+
+    // Original getUser method - default behavior with caching enabled
+    @Override
+    public Result<User> getUser(String userId, String pwd) {
+        return getUser(userId, pwd, true); // Default to using cache
+    }
+
 
     @Override
     public Result<User> updateUser(String userId, String pwd, User newUserInfo) {
@@ -87,7 +121,7 @@ public class AzureUsers implements Users {
 
         try {
             User existingUser = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
-            if (existingUser == null) {
+            if (existingUser == null && existingUser.getPwd().equals(pwd)) {
                 Log.severe(() -> String.format("Could not find user to update. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
