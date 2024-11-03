@@ -3,6 +3,7 @@ package tukano.impl.storage;
 import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
+import com.azure.storage.blob.models.BlobStorageException;
 import tukano.api.Result;
 import utils.BinaryCacheUtils;
 
@@ -10,12 +11,14 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static utils.ResourceUtils.loadPropertiesFromResources;
 
 public class AzureBlobStorage implements BlobStorage {
+    private static final Logger Log = Logger.getLogger(AzureBlobStorage.class.getName());
     private static final String propertiesFile = "azureblob.properties";
     private final BlobContainerClient containerClient;
-    private static final Logger Log = Logger.getLogger(AzureBlobStorage.class.getName());
+
 
     private static AzureBlobStorage instance;
     private final BinaryCacheUtils cacheUtils = new BinaryCacheUtils();
@@ -79,36 +82,26 @@ public class AzureBlobStorage implements BlobStorage {
 
         // Cache miss - proceed with blob storage read
         var blob = containerClient.getBlobClient(path);
-        byte[] data = blob.downloadContent().toBytes();
-        if (data != null) {
-            cacheUtils.storeInCache(cacheKey, data, 3600); // Store in cache with 1-hour TTL
-            return Result.ok(data);
-        } else {
+        if (!blob.exists()){
+            return Result.error(Result.ErrorCode.NOT_FOUND);
+        }
+        try {
+            BinaryData data = blob.downloadContent();
+            cacheUtils.storeInCache(cacheKey, data.toBytes(), 3600);
+            return Result.ok(data.toBytes());
+        } catch (Exception e) {
+            Log.severe(() -> format("Error reading blob %s\n%s", path, e.getMessage()));
             return Result.error(Result.ErrorCode.INTERNAL_ERROR);
         }
     }
 
     @Override
     public Result<Void> read(String path, Consumer<byte[]> sink) {
-        String cacheKey = BLOB_CACHE_PREFIX + path;
-
-        // Attempt to retrieve from cache
-        BinaryCacheUtils.CacheResult<byte[]> cacheResult = cacheUtils.getFromCache(cacheKey);
-        if (cacheResult.isCacheHit()) {
-            Log.info(() -> "Cache hit for blob: " + path);
-            sink.accept(cacheResult.getData());
-            return Result.ok();
+        var result = read(path);
+        if(!result.isOK()){
+            return Result.error(result.error());
         }
-
-        // Cache miss - proceed with blob storage read
-        var blob = containerClient.getBlobClient(path);
-        byte[] data = blob.downloadContent().toBytes();
-        if (data != null) {
-            cacheUtils.storeInCache(cacheKey, data, 3600); // Store in cache with 1-hour TTL
-            sink.accept(data);
-            return Result.ok();
-        } else {
-            return Result.error(Result.ErrorCode.INTERNAL_ERROR);
-        }
+        sink.accept(result.value());
+        return Result.ok();
     }
 }
