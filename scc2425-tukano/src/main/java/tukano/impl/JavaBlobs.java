@@ -8,7 +8,6 @@ import tukano.impl.storage.BlobStorage;
 import utils.Hash;
 import utils.Hex;
 
-import java.io.IOException;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -23,7 +22,7 @@ public class JavaBlobs implements Blobs {
     public String baseURI;
     private final BlobStorage storage;
 
-    synchronized public static Blobs getInstance() throws IOException {
+    synchronized public static Blobs getInstance() {
         if (instance == null)
             instance = new JavaBlobs();
         return instance;
