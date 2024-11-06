@@ -7,6 +7,7 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import org.hibernate.Cache;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
@@ -20,6 +21,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import static tukano.api.Result.*;
+import static utils.AuthUtils.authirizationOk;
 
 public class AzureUsers implements Users {
 
@@ -72,7 +74,11 @@ public class AzureUsers implements Users {
         // Attempt to retrieve the user from the cache if caching is enabled
         User user = null;
         if (useCache) {
-            user = getUserFromCache(userId);
+            CacheResult<User> cacheResult = CacheUtils.getUserFromCache(userId);
+            if (cacheResult.isCacheHit()) {
+                Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
+                user = cacheResult.getUser();
+            }
         }
 
         // Cache miss or cache disabled - proceed with database lookup
@@ -94,37 +100,12 @@ public class AzureUsers implements Users {
                 return error(Result.ErrorCode.NOT_FOUND);
             }
         }
+
         if (!authirizationOk(user, pwd)) {
             Log.severe(() -> String.format("Invalid cookie or password for user with Id %s\n", userId));
             return error(ErrorCode.UNAUTHORIZED);
         }
         return ok(user);
-    }
-
-    private boolean authirizationOk(User user, String pwd){
-        // password field can also be used for tokens
-        if (Token.hasTokenFormat(pwd)) {
-            return Token.isValid(pwd, user.getId());
-        } else {
-            if (user.getPwd().equals(pwd)){
-                String token = Token.get(user.getId());
-                CacheUtils.storeTokenInCache(user.getId(), token);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private User getUserFromCache(String userId){
-        CacheResult<User> cacheResult = CacheUtils.getUserFromCache(userId);
-
-        if (cacheResult.isCacheHit()) {
-            Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
-
-            return cacheResult.getUser();
-        }
-        return null;
     }
 
     // Original getUser method - default behavior with caching enabled
@@ -139,7 +120,7 @@ public class AzureUsers implements Users {
         Log.info(() -> String.format("updateUser : userId = %s, pwd = %s, user: %s\n", userId, pwd, newUserInfo));
 
         try {
-            User existingUser = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
+            User existingUser = getUser(userId, pwd, true).value();
             if (existingUser == null) {
                 Log.severe(() -> String.format("Could not find user to update. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
@@ -167,7 +148,7 @@ public class AzureUsers implements Users {
         Log.info(() -> String.format("deleteUser : userId = %s, pwd = %s\n", userId, pwd));
 
         try {
-            User user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
+            User user = getUser(userId, pwd, true).value();
             if (user == null) {
                 Log.severe(() -> String.format("Could not find user to delete. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
@@ -197,7 +178,10 @@ public class AzureUsers implements Users {
         CosmosPagedIterable<User> users = container.queryItems(query, new CosmosQueryRequestOptions(), User.class);
 
         List<User> userList = new ArrayList<>();
-        users.forEach(user -> userList.add(user.copyWithoutPassword()));
+        users.forEach(user -> {
+            CacheUtils.storeUserInCache(user);
+            userList.add(user.copyWithoutPassword());
+        });
         Log.info(() -> String.format("query returned %d items\n", userList.size()));
 
         return ok(userList);

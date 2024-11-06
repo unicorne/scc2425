@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import static tukano.api.Result.error;
 import static tukano.api.Result.ok;
+import static utils.AuthUtils.authirizationOk;
 
 public class SQLUsers implements Users {
     private static final Logger Log = Logger.getLogger(SQLUsers.class.getName());
@@ -82,49 +83,47 @@ public class SQLUsers implements Users {
     public Result<User> getUser(String userId, String pwd, boolean useCache) {
         Log.info(() -> String.format("getUser : userId = %s, pwd = %s, useCache = %b\n", userId, pwd, useCache));
 
-        CacheUtils cacheUtils = new CacheUtils();
-
+        User user = null;
         if (useCache) {
-            CacheUtils.CacheResult<User> cacheResult = cacheUtils.getUserFromCache(userId);
+            CacheUtils.CacheResult<User> cacheResult = CacheUtils.getUserFromCache(userId);
             if (cacheResult.isCacheHit()) {
-                User cachedUser = cacheResult.getUser();
-                if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
-                    return ok(cachedUser);
-                } else {
-                    return error(Result.ErrorCode.UNAUTHORIZED);
-                }
+                Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
+                user = cacheResult.getUser();
             }
         }
 
-        String sql = "SELECT * FROM Users WHERE id = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, userId);
-            ResultSet rs = pstmt.executeQuery();
+        if (user == null) {
+            String sql = "SELECT * FROM Users WHERE id = ?";
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, userId);
+                ResultSet rs = pstmt.executeQuery();
 
-            if (!rs.next()) {
+                if (!rs.next()) {
+                    return error(Result.ErrorCode.NOT_FOUND);
+                }
+
+                user = new User(
+                        rs.getString("id"),
+                        rs.getString("pwd"),
+                        rs.getString("displayName"),
+                        rs.getString("email")
+                );
+
+                if (useCache) {
+                    CacheUtils.storeUserInCache(user);
+                }
+
+            } catch (SQLException e) {
+                Log.severe(() -> String.format("Error getting User with Id %s\n%s", userId, e.getMessage()));
                 return error(Result.ErrorCode.NOT_FOUND);
             }
-
-            User user = new User(
-                    rs.getString("id"),
-                    rs.getString("pwd"),
-                    rs.getString("displayName"),
-                    rs.getString("email")
-            );
-
-            if (!user.getPwd().equals(pwd)) {
-                return error(Result.ErrorCode.UNAUTHORIZED);
-            }
-
-            if (useCache) {
-                cacheUtils.storeUserInCache(user);
-            }
-
-            return ok(user);
-        } catch (SQLException e) {
-            Log.severe(() -> String.format("Error getting User with Id %s\n%s", userId, e.getMessage()));
-            return error(Result.ErrorCode.NOT_FOUND);
         }
+
+        if (!authirizationOk(user, pwd)) {
+            Log.severe(() -> String.format("Invalid cookie or password for user with Id %s\n", userId));
+            return error(Result.ErrorCode.UNAUTHORIZED);
+        }
+        return ok(user);
     }
 
     @Override
@@ -163,7 +162,11 @@ public class SQLUsers implements Users {
         if (!user.isOK()) {
             return user;
         }
-
+        // delete associated shorts
+        SQLShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
+        // delete associated blobs
+        JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
+        // delete user
         String sql = "DELETE FROM Users WHERE id = ? AND pwd = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, userId);
@@ -187,6 +190,12 @@ public class SQLUsers implements Users {
 
             List<User> users = new ArrayList<>();
             while (rs.next()) {
+                CacheUtils.storeUserInCache(new User(
+                        rs.getString("id"),
+                        rs.getString("pwd"),
+                        rs.getString("displayName"),
+                        rs.getString("email")));
+
                 users.add(new User(
                         rs.getString("id"),
                         null,

@@ -169,7 +169,7 @@ public class SQLShorts implements Shorts {
                             String blobName = shrt.getBlobUrl().substring(
                                     shrt.getBlobUrl().lastIndexOf('/') + 1,
                                     shrt.getBlobUrl().lastIndexOf('?'));
-                            JavaBlobs.getInstance().delete(blobName, Token.get());
+                            JavaBlobs.getInstance().delete(blobName, Token.get(blobName));
 
                             return ok();
                         } catch (SQLException e) {
