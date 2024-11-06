@@ -3,11 +3,7 @@ package tukano.impl.storage;
 import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
-import com.azure.storage.blob.models.BlobStorageException;
 import tukano.api.Result;
-import tukano.impl.JavaBlobs;
-import utils.Hash;
-import utils.Hex;
 
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -62,7 +58,7 @@ public class AzureBlobStorage implements BlobStorage {
     @Override
     public Result<byte[]> read(String path) {
         var blob = containerClient.getBlobClient(path);
-        if (!blob.exists()){
+        if (!blob.exists()) {
             return Result.error(Result.ErrorCode.NOT_FOUND);
         }
         try {
@@ -77,7 +73,7 @@ public class AzureBlobStorage implements BlobStorage {
     @Override
     public Result<Void> read(String path, Consumer<byte[]> sink) {
         var result = read(path);
-        if(!result.isOK()){
+        if (!result.isOK()) {
             return Result.error(result.error());
         }
         sink.accept(result.value());

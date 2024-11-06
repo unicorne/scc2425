@@ -32,7 +32,7 @@ public class AzureShorts implements Shorts {
     private AzureShorts() {
 
         Properties cosmosDBProps = new Properties();
-        ResourceUtils.loadPropertiesFromResources(cosmosDBProps, "cosmosdb.properties");
+        ResourceUtils.loadPropertiesFromResources(cosmosDBProps, "db.properties");
         String shortContainerName = cosmosDBProps.getProperty("shortContainerName");
 
         this.container = CosmosClientContainer.getContainer(shortContainerName);

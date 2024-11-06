@@ -21,7 +21,7 @@ public class SQLShorts implements Shorts {
 
     private SQLShorts() {
         Properties props = new Properties();
-        ResourceUtils.loadPropertiesFromResources(props, "sqldb.properties");
+        ResourceUtils.loadPropertiesFromResources(props, "db.properties");
         String connectionString = props.getProperty("connectionString");
         String user = props.getProperty("username");
         String pass = props.getProperty("password");

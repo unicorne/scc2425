@@ -34,7 +34,7 @@ public class AzureUsers implements Users {
     private AzureUsers() {
 
         Properties props = new Properties();
-        ResourceUtils.loadPropertiesFromResources(props, "cosmosdb.properties");
+        ResourceUtils.loadPropertiesFromResources(props, "db.properties");
         String containerName = props.getProperty("userContainerName");
 
         this.container = CosmosClientContainer.getContainer(containerName);

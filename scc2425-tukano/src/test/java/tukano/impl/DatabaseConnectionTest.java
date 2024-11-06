@@ -42,7 +42,7 @@ public class DatabaseConnectionTest {
 
         // Load properties file
         Properties props = new Properties();
-        props.load(getClass().getClassLoader().getResourceAsStream("sqldb.properties"));
+        props.load(getClass().getClassLoader().getResourceAsStream("db.properties"));
 
         // Print connection details (without password)
         System.out.println("\nAttempting connection with:");

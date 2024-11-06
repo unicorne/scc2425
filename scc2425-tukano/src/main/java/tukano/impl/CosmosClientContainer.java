@@ -15,7 +15,7 @@ public class CosmosClientContainer {
 
     private CosmosClientContainer(){
         Properties props = new Properties();
-        ResourceUtils.loadPropertiesFromResources(props, "cosmosdb.properties");
+        ResourceUtils.loadPropertiesFromResources(props, "db.properties");
         String CONNECTION_URL = props.getProperty("connectionUrl");
         String DB_KEY = props.getProperty("dbKey");
         String DATABASE_NAME = props.getProperty("dbName");
