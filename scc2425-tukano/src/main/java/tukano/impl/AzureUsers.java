@@ -122,24 +122,32 @@ public class AzureUsers implements Users {
     public Result<User> updateUser(String userId, String pwd, User newUserInfo) {
         Log.info(() -> String.format("updateUser : userId = %s, pwd = %s, user: %s\n", userId, pwd, newUserInfo));
 
+        CacheUtils cacheUtils = new CacheUtils();
+
         try {
             User existingUser = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
             if (existingUser == null) {
                 Log.severe(() -> String.format("Could not find user to update. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
+            if (!existingUser.getPwd().equals(pwd)) {
+                Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
+                return error(ErrorCode.UNAUTHORIZED);
+            }
+
             User updatedUser = existingUser.updateFrom(newUserInfo);
             CosmosItemResponse<User> response = container.replaceItem(updatedUser, userId, new PartitionKey(userId), new CosmosItemRequestOptions());
             User item = response.getItem();
+
             if (item == null) {
                 Log.severe(() -> String.format("Error updating User with Id %s\n", userId));
                 return error(ErrorCode.INTERNAL_ERROR);
             }
-            if (!item.getPwd().equals(pwd)) {
-                Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
-                return error(ErrorCode.UNAUTHORIZED);
-            }
-            return ok(response.getItem());
+
+            // Update the cache with the new user information
+            cacheUtils.storeUserInCache(item);
+
+            return ok(item);
         } catch (CosmosException e) {
             Log.severe(() -> String.format("Error updating User with Id %s\n%s", userId, e.getMessage()));
             return error(Result.ErrorCode.NOT_FOUND);
@@ -149,6 +157,8 @@ public class AzureUsers implements Users {
     @Override
     public Result<User> deleteUser(String userId, String pwd) {
         Log.info(() -> String.format("deleteUser : userId = %s, pwd = %s\n", userId, pwd));
+
+        CacheUtils cacheUtils = new CacheUtils();
 
         try {
             User user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
@@ -160,13 +170,19 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
+
             container.deleteItem(userId, new PartitionKey(userId), new CosmosItemRequestOptions());
+
+            // Remove the user from the cache
+            cacheUtils.removeUserFromCache(userId);
+
             return ok(user);
         } catch (CosmosException e) {
             Log.severe(() -> String.format("Error deleting User with Id %s\n%s", userId, e.getMessage()));
             return error(Result.ErrorCode.NOT_FOUND);
         }
     }
+
 
     @Override
     public Result<List<User>> searchUsers(String pattern) {
