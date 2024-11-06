@@ -149,7 +149,12 @@ public class AzureUsers implements Users {
         Log.info(() -> String.format("deleteUser : userId = %s, pwd = %s\n", userId, pwd));
 
         try {
-            User user = getUser(userId, pwd, true).value();
+            Result<User> result = getUser(userId, pwd, true);
+            if (!result.isOK()){
+                Log.severe(() -> String.format("Could not find user to delete. user-id=%s\n", userId));
+                return error(ErrorCode.NOT_FOUND);
+            }
+            User user = result.value();
             if (user == null) {
                 Log.severe(() -> String.format("Could not find user to delete. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);

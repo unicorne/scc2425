@@ -144,7 +144,7 @@ public class SQLShortsTest {
 
     @Test
     void testDeleteAllShorts() {
-        Result<Void> deleteResult = sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, Token.get());
+        Result<Void> deleteResult = sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, Token.get(TEST_USER_1.getId()));
         assertTrue(deleteResult.isOK());
 
         Result<List<String>> shortsResult = sqlShorts.getShorts(TEST_USER_1.getId());

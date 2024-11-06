@@ -185,7 +185,7 @@ public class AzureShortsTest {
         shorts.createShort(testUserId1, password);
         shorts.createShort(testUserId1, password);
 
-        Result<Void> deleteAllResult = shorts.deleteAllShorts(testUserId1, password, Token.get());
+        Result<Void> deleteAllResult = shorts.deleteAllShorts(testUserId1, password, Token.get(testUserId1));
         assertTrue(deleteAllResult.isOK());
 
         Result<List<String>> getShortsResult = shorts.getShorts(testUserId1);

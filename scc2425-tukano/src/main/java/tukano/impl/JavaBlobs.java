@@ -2,17 +2,20 @@ package tukano.impl;
 
 import tukano.api.Blobs;
 import tukano.api.Result;
+import tukano.impl.rest.RestShortsResource;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.storage.AzureBlobStorage;
 import tukano.impl.storage.BlobStorage;
 import utils.Hash;
 import utils.Hex;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
 import static tukano.api.Result.error;
+import static tukano.api.Result.errorOrResult;
 
 public class JavaBlobs implements Blobs {
 
@@ -70,7 +73,13 @@ public class JavaBlobs implements Blobs {
         if (!Token.isValid(token, userId))
             return error(FORBIDDEN);
 
-        return storage.delete(toPath(userId));
+        List<String> shorts = new RestShortsResource().getShorts(userId);
+        for (String shortId : shorts){
+            Result<Void> result = storage.delete(toPath(shortId));
+            if (!result.isOK())
+                return result;
+        }
+        return Result.ok();
     }
 
     private boolean validBlobId(String blobId, String token) {

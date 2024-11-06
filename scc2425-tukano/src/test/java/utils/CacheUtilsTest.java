@@ -5,12 +5,11 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import tukano.api.User;
 import tukano.impl.RedisCachePool;
-import utils.CacheUtils;
+import utils.CacheUtils.CacheResult;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CacheUtilsTest {
-
-    private final CacheUtils cacheUtils = new CacheUtils();
 
     @Test
     public void testRedisConnection() {
@@ -33,7 +32,7 @@ public class CacheUtilsTest {
         testUser.setPwd("testPassword");
 
         // Store the User in cache
-        cacheUtils.storeUserInCache(testUser);
+        CacheUtils.storeUserInCache(testUser);
 
         // Check that the User data exists in Redis
         JedisPool pool = RedisCachePool.getCachePool();
@@ -54,10 +53,10 @@ public class CacheUtilsTest {
         testUser.setPwd("testPassword");
 
         // Store the User in cache to simulate a cache hit
-        cacheUtils.storeUserInCache(testUser);
+        CacheUtils.storeUserInCache(testUser);
 
         // Attempt to retrieve the User from cache
-        CacheUtils.CacheResult<User> cacheResult = cacheUtils.getUserFromCache(testUser.getId());
+        CacheResult<User> cacheResult = CacheUtils.getUserFromCache(testUser.getId());
 
         // Assert that the cache hit flag is true and the user is correctly retrieved
         assertTrue(cacheResult.isCacheHit(), "Cache should have a hit for the stored user.");
@@ -69,7 +68,7 @@ public class CacheUtilsTest {
     @Test
     public void testGetUserFromCache_Miss() {
         // Attempt to retrieve a User that doesn't exist in cache
-        CacheUtils.CacheResult<User> cacheResult = cacheUtils.getUserFromCache("nonExistentUser");
+        CacheResult<User> cacheResult = CacheUtils.getUserFromCache("nonExistentUser");
 
         // Assert that the cache hit flag is false and the retrieved user is null
         assertFalse(cacheResult.isCacheHit(), "Cache should miss for a non-existent user.");
@@ -84,17 +83,17 @@ public class CacheUtilsTest {
         testUser.setPwd("testPassword");
 
         // Store the User in cache
-        cacheUtils.storeUserInCache(testUser);
+        CacheUtils.storeUserInCache(testUser);
 
         // Ensure the User is in cache
-        CacheUtils.CacheResult<User> cacheResultBeforeRemove = cacheUtils.getUserFromCache(testUser.getId());
+        CacheResult<User> cacheResultBeforeRemove = CacheUtils.getUserFromCache(testUser.getId());
         assertTrue(cacheResultBeforeRemove.isCacheHit(), "Cache should have a hit for the stored user before removal.");
 
         // Remove the User from cache
-        cacheUtils.removeUserFromCache(testUser.getId());
+        CacheUtils.removeUserFromCache(testUser.getId());
 
         // Attempt to retrieve the User from cache after removal
-        CacheUtils.CacheResult<User> cacheResultAfterRemove = cacheUtils.getUserFromCache(testUser.getId());
+        CacheResult<User> cacheResultAfterRemove = CacheUtils.getUserFromCache(testUser.getId());
 
         // Assert that the cache miss flag is true and no user is retrieved
         assertFalse(cacheResultAfterRemove.isCacheHit(), "Cache should miss for the removed user.");
