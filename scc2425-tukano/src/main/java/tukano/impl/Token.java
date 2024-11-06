@@ -1,14 +1,17 @@
 package tukano.impl;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.logging.Logger;
 
 import utils.Hash;
 
 public class Token {
-	private static Logger Log = Logger.getLogger(Token.class.getName());
+	private static final Logger Log = Logger.getLogger(Token.class.getName());
 
 	private static final String DELIMITER = "-";
-	private static final long MAX_TOKEN_AGE = 300000;
+	private static final long MAX_TOKEN_AGE = 300000000;
 	private static String secret = "summysecret";
 
 	public static void setSecret(String s) {
@@ -27,17 +30,31 @@ public class Token {
 		return String.format("%s%s%s", timestamp, DELIMITER, signature);
 	}
 
+	public static boolean hasTokenFormat(String tokenStr) {
+		String[] parts = tokenStr.split(DELIMITER);
+		if(parts.length == 2) {
+			try {
+				Long.parseLong(parts[0]);
+				if (!parts[1].isEmpty()) {
+					return true;
+				}
+			} catch (NumberFormatException e) {
+				Log.severe(() -> String.format("Error parsing token '%s'", tokenStr));
+			}
+		}
+		return false;
+	}
+
 	public static boolean isValid(String tokenStr, String id) {
 		try {
 			var bits = tokenStr.split(DELIMITER);
-			var timestamp = Long.valueOf(bits[0]);
+			var timestamp = Long.parseLong(bits[0]);
 			var hmac = Hash.of(id, timestamp, secret);
 			var elapsed = Math.abs(System.currentTimeMillis() - timestamp);			
 			Log.info(String.format("hash ok:%s, elapsed %s ok: %s\n", hmac.equals(bits[1]), elapsed, elapsed < MAX_TOKEN_AGE));
-			//return hmac.equals(bits[1]) && elapsed < MAX_TOKEN_AGE;			
-			return true;
-		} catch( Exception x ) {
-			x.printStackTrace();
+			return hmac.equals(bits[1]) && elapsed < MAX_TOKEN_AGE;
+		} catch(Exception x ) {
+			Log.severe(() -> String.format("Error validating Token '%s' for id '%s'", tokenStr, id));
 			return false;
 		}
 	}

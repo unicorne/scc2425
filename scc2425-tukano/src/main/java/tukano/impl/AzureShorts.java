@@ -2,26 +2,24 @@ package tukano.impl;
 
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.FeedResponse;
-import com.azure.cosmos.util.CosmosPagedIterable;
-import tukano.api.*;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import tukano.api.Short;
+import tukano.api.*;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
 import utils.ResourceUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Logger;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.PartitionKey;
 import java.util.UUID;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
 import static java.lang.String.format;
-import static tukano.api.Result.*;
 import static tukano.api.Result.ErrorCode.*;
+import static tukano.api.Result.*;
 
 public class AzureShorts implements Shorts {
 
@@ -32,7 +30,7 @@ public class AzureShorts implements Shorts {
 
     private static AzureShorts instance;
 
-    private AzureShorts(){
+    private AzureShorts() {
 
         Properties cosmosDBProps = new Properties();
         ResourceUtils.loadPropertiesFromResources(cosmosDBProps, "cosmosdb.properties");
@@ -44,8 +42,8 @@ public class AzureShorts implements Shorts {
         this.container = CosmosClientContainer.getContainer(shortContainerName);
     }
 
-    public static AzureShorts getInstance(){
-        if (instance == null){
+    public static AzureShorts getInstance() {
+        if (instance == null) {
             instance = new AzureShorts();
         }
         return instance;
@@ -111,7 +109,7 @@ public class AzureShorts implements Shorts {
 
                         // Delete the blob
                         String blobName = shrt.getBlobUrl().substring(shrt.getBlobUrl().lastIndexOf('/') + 1, shrt.getBlobUrl().lastIndexOf('?'));
-                        JavaBlobs.getInstance().delete(blobName, Token.get());
+                        JavaBlobs.getInstance().delete(blobName, Token.get(blobName));
 
                         return ok();
                     } catch (Exception e) {

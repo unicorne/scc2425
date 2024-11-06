@@ -69,46 +69,62 @@ public class AzureUsers implements Users {
     public Result<User> getUser(String userId, String pwd, boolean useCache) {
         Log.info(() -> String.format("getUser : userId = %s, pwd = %s, useCache = %b\n", userId, pwd, useCache));
 
-        CacheUtils cacheUtils = new CacheUtils();
-
         // Attempt to retrieve the user from the cache if caching is enabled
+        User user = null;
         if (useCache) {
-            CacheResult<User> cacheResult = cacheUtils.getUserFromCache(userId);
-
-            if (cacheResult.isCacheHit()) {
-                Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
-
-                User cachedUser = cacheResult.getUser();
-                if (cachedUser != null && cachedUser.getPwd().equals(pwd)) {
-                    return ok(cachedUser);
-                } else {
-                    return error(ErrorCode.FORBIDDEN);
-                }
-            }
+            user = getUserFromCache(userId);
         }
 
         // Cache miss or cache disabled - proceed with database lookup
-        try {
-            User user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
-            if (user == null) {
-                Log.severe(() -> String.format("Error getting User with Id %s. Null result\n", userId));
-                return error(ErrorCode.NOT_FOUND);
-            }
-            if (!user.getPwd().equals(pwd)) {
-                Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
-                return error(ErrorCode.UNAUTHORIZED);
-            }
+        if (user == null){
+            try {
+                user = container.readItem(userId, new PartitionKey(userId), User.class).getItem();
+                if (user == null) {
+                    Log.severe(() -> String.format("Error getting User with Id %s. Null result\n", userId));
+                    return error(ErrorCode.NOT_FOUND);
+                }
 
-            // Store the retrieved user in cache if caching is enabled
-            if (useCache) {
-                cacheUtils.storeUserInCache(user);
-            }
-            return ok(user);
+                // Store the retrieved user in cache if caching is enabled
+                if (useCache) {
+                    CacheUtils.storeUserInCache(user);
+                }
 
-        } catch (CosmosException e) {
-            Log.severe(() -> String.format("Error getting User with Id %s\n%s", userId, e.getMessage()));
-            return error(Result.ErrorCode.NOT_FOUND);
+            } catch (CosmosException e) {
+                Log.severe(() -> String.format("Error getting User with Id %s\n%s", userId, e.getMessage()));
+                return error(Result.ErrorCode.NOT_FOUND);
+            }
         }
+        if (!authirizationOk(user, pwd)) {
+            Log.severe(() -> String.format("Invalid cookie or password for user with Id %s\n", userId));
+            return error(ErrorCode.UNAUTHORIZED);
+        }
+        return ok(user);
+    }
+
+    private boolean authirizationOk(User user, String pwd){
+        // password field can also be used for tokens
+        if (Token.hasTokenFormat(pwd)) {
+            return Token.isValid(pwd, user.getId());
+        } else {
+            if (user.getPwd().equals(pwd)){
+                String token = Token.get(user.getId());
+                CacheUtils.storeTokenInCache(user.getId(), token);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private User getUserFromCache(String userId){
+        CacheResult<User> cacheResult = CacheUtils.getUserFromCache(userId);
+
+        if (cacheResult.isCacheHit()) {
+            Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
+
+            return cacheResult.getUser();
+        }
+        return null;
     }
 
     // Original getUser method - default behavior with caching enabled
@@ -135,7 +151,7 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Error updating User with Id %s\n", userId));
                 return error(ErrorCode.INTERNAL_ERROR);
             }
-            if (!item.getPwd().equals(pwd)) {
+            if (!authirizationOk(item, pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
@@ -156,10 +172,15 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Could not find user to delete. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
-            if (!user.getPwd().equals(pwd)) {
+            if (!authirizationOk(user, pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
+            // delete associated shorts
+            AzureShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
+            // delete associated blobs
+            JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
+            // delete user
             container.deleteItem(userId, new PartitionKey(userId), new CosmosItemRequestOptions());
             return ok(user);
         } catch (CosmosException e) {

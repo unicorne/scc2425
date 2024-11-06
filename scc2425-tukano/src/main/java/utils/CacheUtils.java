@@ -14,43 +14,70 @@ public class CacheUtils {
 
     private static final Logger Log = Logger.getLogger(CacheUtils.class.getName());
     private static final String USER_CACHE_PREFIX = "user:";
+    private static final String TOKEN_CACHE_PREFIX = "token:";
     private static final ObjectMapper objectMapper = new ObjectMapper(); // Jackson ObjectMapper for JSON
 
-    public CacheResult<User> getUserFromCache(String userId) {
+    public static CacheResult<User> getUserFromCache(String userId) {
         JedisPool pool = RedisCachePool.getCachePool();
         try (Jedis jedis = pool.getResource()) {
-            String cacheKey = "user:" + userId;
+            String cacheKey = USER_CACHE_PREFIX + userId;
             String cachedUserData = jedis.get(cacheKey);
 
             if (cachedUserData != null) {
                 // Deserialize only if cache data is found
-                User cachedUser = objectMapper.readValue(cachedUserData, User.class);
+                User cachedUser = deserializeUser(cachedUserData);
                 return new CacheResult<>(cachedUser, true);
             } else {
                 return new CacheResult<>(null, false);
             }
         } catch (Exception e) {
-            // Handle exceptions appropriately (e.g., log and return a cache miss)
+            Log.warning(() -> "Cache read error: " + e.getMessage());
             return new CacheResult<>(null, false);
         }
     }
 
-    public void storeUserInCache(User user) {
+    public static void storeUserInCache(User user) {
         JedisPool pool = RedisCachePool.getCachePool();
         try (Jedis jedis = pool.getResource()) {
-            String cacheKey = "user:" + user.getId();
-            String serializedUserData = objectMapper.writeValueAsString(user);
+            String cacheKey = USER_CACHE_PREFIX + user.getId();
+            String serializedUserData = serializeUser(user);
             jedis.setex(cacheKey, 3600, serializedUserData); // Set 1-hour TTL
         } catch (Exception e) {
-            // Handle exceptions appropriately
+            Log.severe(() -> "Cache write error: " + e.getMessage());
         }
     }
 
+    public static void storeTokenInCache(String userId, String token) {
+        JedisPool pool = RedisCachePool.getCachePool();
+        try (Jedis jedis = pool.getResource()) {
+            String cacheKey = TOKEN_CACHE_PREFIX + userId;
+            jedis.setex(cacheKey, 3600, token); // Set 1-hour TTL
+        } catch (Exception e) {
+            Log.severe(() -> "Cache write error: " + e.getMessage());
+        }
+    }
+
+    public static CacheResult<String> getTokenFromCache(String userId) {
+        JedisPool pool = RedisCachePool.getCachePool();
+        try (Jedis jedis = pool.getResource()) {
+            String cacheKey = TOKEN_CACHE_PREFIX + userId;
+            String token = jedis.get(cacheKey);
+
+            if (token != null) {
+                return new CacheResult<>(token, true);
+            } else {
+                return new CacheResult<>(null, false);
+            }
+        } catch (Exception e) {
+            Log.warning(() -> "Cache read error: " + e.getMessage());
+            return new CacheResult<>(null, false);
+        }
+    }
 
     /**
      * Serialize a User object to JSON String.
      */
-    public String serializeUser(User user) {
+    public static String serializeUser(User user) {
         try {
             return objectMapper.writeValueAsString(user); // Convert User to JSON String
         } catch (JsonProcessingException e) {
@@ -62,7 +89,7 @@ public class CacheUtils {
     /**
      * Deserialize a JSON String to a User object.
      */
-    public User deserializeUser(String data) {
+    public static User deserializeUser(String data) {
         try {
             return objectMapper.readValue(data, User.class); // Convert JSON String back to User
         } catch (JsonProcessingException e) {
