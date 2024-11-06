@@ -73,7 +73,7 @@ public class CacheUtils {
             return new CacheResult<>(null, false);
         }
     }
-    public void removeUserFromCache(String userId) {
+    public static void removeUserFromCache(String userId) {
         JedisPool pool = RedisCachePool.getCachePool();
         try (Jedis jedis = pool.getResource()) {
             String cacheKey = USER_CACHE_PREFIX + userId;

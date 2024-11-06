@@ -172,6 +172,8 @@ public class SQLUsers implements Users {
             pstmt.setString(1, userId);
             pstmt.setString(2, pwd);
             pstmt.executeUpdate();
+            // update cache
+            CacheUtils.removeUserFromCache(userId);
             return user;
         } catch (SQLException e) {
             Log.severe(() -> String.format("Error deleting User with Id %s\n%s", userId, e.getMessage()));
