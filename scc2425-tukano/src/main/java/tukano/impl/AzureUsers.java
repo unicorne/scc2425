@@ -132,11 +132,12 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Error updating User with Id %s\n", userId));
                 return error(ErrorCode.INTERNAL_ERROR);
             }
+            CacheUtils.storeUserInCache(item);
             if (!authirizationOk(item, pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
-            return ok(response.getItem());
+            return ok(item);
         } catch (CosmosException e) {
             Log.severe(() -> String.format("Error updating User with Id %s\n%s", userId, e.getMessage()));
             return error(Result.ErrorCode.NOT_FOUND);
@@ -163,6 +164,8 @@ public class AzureUsers implements Users {
             JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
             // delete user
             container.deleteItem(userId, new PartitionKey(userId), new CosmosItemRequestOptions());
+            // Remove the user from the cache
+            CacheUtils.removeUserFromCache(userId);
             return ok(user);
         } catch (CosmosException e) {
             Log.severe(() -> String.format("Error deleting User with Id %s\n%s", userId, e.getMessage()));

@@ -73,6 +73,17 @@ public class CacheUtils {
             return new CacheResult<>(null, false);
         }
     }
+    public void removeUserFromCache(String userId) {
+        JedisPool pool = RedisCachePool.getCachePool();
+        try (Jedis jedis = pool.getResource()) {
+            String cacheKey = USER_CACHE_PREFIX + userId;
+            jedis.del(cacheKey); // Delete the cache entry for the user
+            Log.info(() -> String.format("Cache entry removed for user with Id %s", userId));
+        } catch (Exception e) {
+            Log.warning(() -> String.format("Error removing user from cache: %s", e.getMessage()));
+        }
+    }
+
 
     /**
      * Serialize a User object to JSON String.
