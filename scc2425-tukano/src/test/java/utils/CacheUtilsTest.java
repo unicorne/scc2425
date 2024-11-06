@@ -75,4 +75,29 @@ public class CacheUtilsTest {
         assertFalse(cacheResult.isCacheHit(), "Cache should miss for a non-existent user.");
         assertNull(cacheResult.getUser(), "Retrieved user should be null for a cache miss.");
     }
+
+    @Test
+    public void testRemoveUserFromCache() {
+        // Prepare a test User object
+        User testUser = new User();
+        testUser.setId("testUserToRemove");
+        testUser.setPwd("testPassword");
+
+        // Store the User in cache
+        cacheUtils.storeUserInCache(testUser);
+
+        // Ensure the User is in cache
+        CacheUtils.CacheResult<User> cacheResultBeforeRemove = cacheUtils.getUserFromCache(testUser.getId());
+        assertTrue(cacheResultBeforeRemove.isCacheHit(), "Cache should have a hit for the stored user before removal.");
+
+        // Remove the User from cache
+        cacheUtils.removeUserFromCache(testUser.getId());
+
+        // Attempt to retrieve the User from cache after removal
+        CacheUtils.CacheResult<User> cacheResultAfterRemove = cacheUtils.getUserFromCache(testUser.getId());
+
+        // Assert that the cache miss flag is true and no user is retrieved
+        assertFalse(cacheResultAfterRemove.isCacheHit(), "Cache should miss for the removed user.");
+        assertNull(cacheResultAfterRemove.getUser(), "Retrieved user should be null after cache removal.");
+    }
 }
