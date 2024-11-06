@@ -26,7 +26,6 @@ public class AzureShorts implements Shorts {
     private static final Logger Log = Logger.getLogger(AzureShorts.class.getName());
 
     private final CosmosContainer container;
-    private final String blobContainerName;
 
     private static AzureShorts instance;
 
@@ -35,9 +34,6 @@ public class AzureShorts implements Shorts {
         Properties cosmosDBProps = new Properties();
         ResourceUtils.loadPropertiesFromResources(cosmosDBProps, "cosmosdb.properties");
         String shortContainerName = cosmosDBProps.getProperty("shortContainerName");
-        Properties blobContainerProps = new Properties();
-        ResourceUtils.loadPropertiesFromResources(blobContainerProps, "azureblob.properties");
-        blobContainerName = blobContainerProps.getProperty("blobContainerName");
 
         this.container = CosmosClientContainer.getContainer(shortContainerName);
     }

@@ -5,13 +5,32 @@ import tukano.api.Short;
 import tukano.api.Shorts;
 import tukano.api.rest.RestShorts;
 import tukano.impl.AzureShorts;
+import tukano.impl.SQLShorts;
+import utils.ResourceUtils;
 
 import java.util.List;
+import java.util.Properties;
 
 @Singleton
 public class RestShortsResource extends RestResource implements RestShorts {
 
-    static final Shorts impl = AzureShorts.getInstance();
+    private final Shorts impl;
+
+    public RestShortsResource() {
+
+        Properties cosmosDBProps = new Properties();
+        ResourceUtils.loadPropertiesFromResources(cosmosDBProps, "db.properties");
+        String dbtype = cosmosDBProps.getProperty("dbtype", "cosmosdb");
+        switch (dbtype){
+            case "cosmosdb":
+                this.impl = AzureShorts.getInstance();
+                break;
+            case "postgresql":
+                this.impl = SQLShorts.getInstance();
+            default:
+                throw new IllegalArgumentException("Unknown dbtype: " + dbtype);
+        }
+    }
 
     @Override
     public Short createShort(String userId, String password) {

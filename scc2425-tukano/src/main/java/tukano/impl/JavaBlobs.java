@@ -8,7 +8,6 @@ import tukano.impl.storage.BlobStorage;
 import utils.Hash;
 import utils.Hex;
 
-import java.io.IOException;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
