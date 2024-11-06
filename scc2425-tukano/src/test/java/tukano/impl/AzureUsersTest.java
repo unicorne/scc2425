@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tukano.api.Result;
 import tukano.api.User;
+import utils.CacheUtils;
 
 import java.util.List;
 
@@ -15,6 +16,8 @@ public class AzureUsersTest {
     private static AzureUsers azureUsers;
     private final User testUser1 = new User("testUser1", "password123", "testuser1@mail.org", "Test User 1");
     private final User testUser2 = new User("testUser2", "password123", "testuser2@mail.org", "Test User 2");
+    private final CacheUtils cacheUtils = new CacheUtils();
+    private final User testUser = new User("testUserCache", "password123", "cacheuser@mail.org", "Cache User");
 
     @BeforeAll
     public static void setUp() {
@@ -88,6 +91,57 @@ public class AzureUsersTest {
         List<String> resultIds = result.value().stream().map(User::getId).toList();
         assertTrue(resultIds.contains(testUser1.getId()), "First user should be in the search results");
         assertTrue(resultIds.contains(testUser2.getId()), "Second user should be in the search results");
+    }
+
+    @Test
+    public void testUserInCacheAfterGetUser() {
+        // Create the user in the database
+        azureUsers.createUser(testUser);
+
+        // Retrieve the user to trigger caching
+        Result<User> result = azureUsers.getUser(testUser.getId(), testUser.getPwd());
+
+        assertTrue(result.isOK(), "User retrieval should succeed");
+
+        // Check if the user is in cache
+        CacheUtils.CacheResult<User> cacheResult = cacheUtils.getUserFromCache(testUser.getId());
+        assertTrue(cacheResult.isCacheHit(), "User should be in cache after retrieval");
+        assertEquals(testUser.getId(), cacheResult.getUser().getId(), "Cached user ID should match");
+    }
+
+    @Test
+    public void testUserNotInCacheAfterDeleteUser() {
+        // Create and retrieve the user to populate the cache
+        azureUsers.createUser(testUser);
+        azureUsers.getUser(testUser.getId(), testUser.getPwd());
+
+        // Delete the user
+        azureUsers.deleteUser(testUser.getId(), testUser.getPwd());
+
+        // Check if the user is removed from cache
+        CacheUtils.CacheResult<User> cacheResult = cacheUtils.getUserFromCache(testUser.getId());
+        assertFalse(cacheResult.isCacheHit(), "User should not be in cache after deletion");
+    }
+
+    @Test
+    public void testCacheUpdatedAfterUpdateUser() {
+        // Create and retrieve the user to populate the cache
+        azureUsers.createUser(testUser);
+        azureUsers.getUser(testUser.getId(), testUser.getPwd());
+
+        // Prepare updated user information
+        String updatedEmail = "updated@mail.org";
+        String updatedDisplayName = "Updated Cache User";
+        User updatedInfo = new User(null, null, updatedEmail, updatedDisplayName);
+
+        // Update the user
+        azureUsers.updateUser(testUser.getId(), testUser.getPwd(), updatedInfo);
+
+        // Check if the cache contains the updated user information
+        CacheUtils.CacheResult<User> cacheResult = cacheUtils.getUserFromCache(testUser.getId());
+        assertTrue(cacheResult.isCacheHit(), "Cache should be updated with new user information");
+        assertEquals(updatedEmail, cacheResult.getUser().getEmail(), "Cached user email should be updated");
+        assertEquals(updatedDisplayName, cacheResult.getUser().getDisplayName(), "Cached user display name should be updated");
     }
 }
 
