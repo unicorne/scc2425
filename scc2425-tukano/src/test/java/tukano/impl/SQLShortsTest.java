@@ -22,21 +22,20 @@ public class SQLShortsTest {
 
     @BeforeAll
     void setUp() {
+        sqlShorts = SQLShorts.getInstance();
         sqlUsers = SQLUsers.getInstance();
         Result<String> user1Result = sqlUsers.createUser(TEST_USER_1);
         Result<String> user2Result = sqlUsers.createUser(TEST_USER_2);
 
         assertTrue(user1Result.isOK());
         assertTrue(user2Result.isOK());
-
-        sqlShorts = SQLShorts.getInstance();
     }
 
     @AfterAll
     void tearDown() {
         // Clean up test data
-        sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, Token.get());
-        sqlShorts.deleteAllShorts(TEST_USER_2.getId(), TEST_PASSWORD, Token.get());
+        sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, Token.get(TEST_USER_1.getId()));
+        sqlShorts.deleteAllShorts(TEST_USER_2.getId(), TEST_PASSWORD, Token.get(TEST_USER_1.getId()));
         sqlUsers.deleteUser(TEST_USER_1.getId(), TEST_PASSWORD);
         sqlUsers.deleteUser(TEST_USER_2.getId(), TEST_PASSWORD);
     }

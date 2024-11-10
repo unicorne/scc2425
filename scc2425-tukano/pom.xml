@@ -66,7 +66,7 @@
 				<version>2.13.0</version>
 			    <configuration>
 			        <schemaVersion>v2</schemaVersion>
-			        <resourceGroup>tukano-1730924605818-rg</resourceGroup>
+			        <resourceGroup>scc-backend-rg-smd</resourceGroup>
 			        <appName>tukano-1730924605818</appName>
 			        <pricingTier>F1</pricingTier>
 			        <region>westeurope</region>
