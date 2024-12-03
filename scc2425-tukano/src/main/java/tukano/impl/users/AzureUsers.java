@@ -1,4 +1,4 @@
-package tukano.impl;
+package tukano.impl.users;
 
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
@@ -7,10 +7,14 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import org.hibernate.Cache;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
+import tukano.impl.shorts.AzureShorts;
+import tukano.impl.CosmosClientContainer;
+import tukano.impl.JavaBlobs;
+import tukano.impl.Token;
+import utils.AuthUtils;
 import utils.CacheUtils;
 import utils.CacheUtils.CacheResult;
 import utils.ResourceUtils;
@@ -21,7 +25,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import static tukano.api.Result.*;
-import static utils.AuthUtils.authirizationOk;
+import static utils.AuthUtils.authorizationOk;
 
 public class AzureUsers implements Users {
 
@@ -77,7 +81,7 @@ public class AzureUsers implements Users {
             CacheResult<User> cacheResult = CacheUtils.getUserFromCache(userId);
             if (cacheResult.isCacheHit()) {
                 Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
-                user = cacheResult.getUser();
+                user = cacheResult.getObject();
             }
         }
 
@@ -101,7 +105,7 @@ public class AzureUsers implements Users {
             }
         }
 
-        if (!authirizationOk(user, pwd)) {
+        if (!authorizationOk(user, pwd)) {
             Log.severe(() -> String.format("Invalid cookie or password for user with Id %s\n", userId));
             return error(ErrorCode.UNAUTHORIZED);
         }
@@ -133,7 +137,7 @@ public class AzureUsers implements Users {
                 return error(ErrorCode.INTERNAL_ERROR);
             }
             CacheUtils.storeUserInCache(item);
-            if (!authirizationOk(item, pwd)) {
+            if (!authorizationOk(item, pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
@@ -159,14 +163,15 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Could not find user to delete. user-id=%s\n", userId));
                 return error(ErrorCode.NOT_FOUND);
             }
-            if (!authirizationOk(user, pwd)) {
+            if (!authorizationOk(user, pwd)) {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
             // delete associated shorts
             AzureShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
             // delete associated blobs
-            JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
+            var cookie = AuthUtils.createCookie(userId);
+            JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
             // delete user
             container.deleteItem(userId, new PartitionKey(userId), new CosmosItemRequestOptions());
             // Remove the user from the cache

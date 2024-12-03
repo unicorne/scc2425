@@ -1,15 +1,13 @@
 package tukano.impl.rest;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Cookie;
 import tukano.api.Short;
 import tukano.api.Shorts;
 import tukano.api.rest.RestShorts;
-import tukano.impl.AzureShorts;
-import tukano.impl.SQLShorts;
-import utils.ResourceUtils;
+import tukano.impl.shorts.ShortsImpl;
 
 import java.util.List;
-import java.util.Properties;
 
 @Singleton
 public class RestShortsResource extends RestResource implements RestShorts {
@@ -17,19 +15,7 @@ public class RestShortsResource extends RestResource implements RestShorts {
     private final Shorts impl;
 
     public RestShortsResource() {
-
-        Properties cosmosDBProps = new Properties();
-        ResourceUtils.loadPropertiesFromResources(cosmosDBProps, "db.properties");
-        String dbtype = cosmosDBProps.getProperty("dbtype", "cosmosdb");
-        switch (dbtype){
-            case "cosmosdb":
-                this.impl = AzureShorts.getInstance();
-                break;
-            case "postgresql":
-                this.impl = SQLShorts.getInstance();
-            default:
-                throw new IllegalArgumentException("Unknown dbtype: " + dbtype);
-        }
+        impl = ShortsImpl.getInstance();
     }
 
     @Override
@@ -78,7 +64,7 @@ public class RestShortsResource extends RestResource implements RestShorts {
     }
 
     @Override
-    public void deleteAllShorts(String userId, String password, String token) {
-        super.resultOrThrow(impl.deleteAllShorts(userId, password, token));
+    public void deleteAllShorts(String userId, String password, Cookie cookie) {
+        super.resultOrThrow(impl.deleteAllShorts(userId, password, cookie));
     }
 }

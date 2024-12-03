@@ -4,6 +4,8 @@ import org.junit.jupiter.api.*;
 import tukano.api.Result;
 import tukano.api.Short;
 import tukano.api.User;
+import tukano.impl.shorts.AzureShorts;
+import tukano.impl.users.AzureUsers;
 
 import java.util.List;
 import java.util.UUID;

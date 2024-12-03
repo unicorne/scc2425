@@ -3,6 +3,7 @@ package tukano.impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tukano.api.User;
+import tukano.impl.users.AzureUsers;
 
 import java.util.ArrayList;
 import java.util.List;

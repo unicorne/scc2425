@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import tukano.api.Result;
 import tukano.api.User;
+import tukano.impl.users.SQLUsers;
 
 import java.util.List;
 

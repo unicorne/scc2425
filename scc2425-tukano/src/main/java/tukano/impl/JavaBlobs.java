@@ -1,11 +1,14 @@
 package tukano.impl;
 
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.Cookie;
 import tukano.api.Blobs;
 import tukano.api.Result;
 import tukano.impl.rest.RestShortsResource;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.storage.AzureBlobStorage;
 import tukano.impl.storage.BlobStorage;
+import utils.AuthUtils;
 import utils.Hash;
 import utils.Hex;
 
@@ -13,9 +16,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
-import static tukano.api.Result.ErrorCode.FORBIDDEN;
-import static tukano.api.Result.error;
-import static tukano.api.Result.errorOrResult;
 
 public class JavaBlobs implements Blobs {
 
@@ -37,53 +37,61 @@ public class JavaBlobs implements Blobs {
     }
 
     @Override
-    public Result<Void> upload(String blobId, byte[] bytes, String token) {
-        Log.info(() -> format("upload : blobId = %s, sha256 = %s, token = %s\n", blobId, Hex.of(Hash.sha256(bytes)), token));
+    public Result<Void> upload(String blobId, byte[] bytes, Cookie cookie) {
+        Log.info(() -> format("upload : blobId = %s, sha256 = %s, token = %s\n", blobId, Hex.of(Hash.sha256(bytes)), cookie));
 
-        if (!validBlobId(blobId, token))
-            return error(FORBIDDEN);
+        try {
+            AuthUtils.validateSession(cookie);
+        } catch (NotAuthorizedException e){
+            return Result.error(Result.ErrorCode.UNAUTHORIZED);
+        }
 
         return storage.write(toPath(blobId), bytes);
     }
 
     @Override
-    public Result<byte[]> download(String blobId, String token) {
-        Log.info(() -> format("download : blobId = %s, token=%s\n", blobId, token));
+    public Result<byte[]> download(String blobId, Cookie cookie) {
+        Log.info(() -> format("download : blobId = %s, token=%s\n", blobId, cookie));
 
-        if (!validBlobId(blobId, token))
-            return error(FORBIDDEN);
+        try {
+            AuthUtils.validateSession(cookie);
+        } catch (NotAuthorizedException e){
+            return Result.error(Result.ErrorCode.UNAUTHORIZED);
+        }
 
         return storage.read(toPath(blobId));
     }
 
     @Override
-    public Result<Void> delete(String blobId, String token) {
-        Log.info(() -> format("delete : blobId = %s, token=%s\n", blobId, token));
+    public Result<Void> delete(String blobId, Cookie cookie) {
+        Log.info(() -> format("delete : blobId = %s, token=%s\n", blobId, cookie));
 
-        if (!validBlobId(blobId, token))
-            return error(FORBIDDEN);
+        try {
+            AuthUtils.validateSession(cookie);
+        } catch (NotAuthorizedException e){
+            return Result.error(Result.ErrorCode.UNAUTHORIZED);
+        }
 
         return storage.delete(toPath(blobId));
     }
 
     @Override
-    public Result<Void> deleteAllBlobs(String userId, String token) {
-        Log.info(() -> format("deleteAllBlobs : userId = %s, token=%s\n", userId, token));
+    public Result<Void> deleteAllBlobs(String userId, Cookie cookie) {
+        Log.info(() -> format("deleteAllBlobs : userId = %s, token=%s\n", userId, cookie));
 
-        if (!Token.isValid(token, userId))
-            return error(FORBIDDEN);
+        try {
+            AuthUtils.validateSession(cookie);
+        } catch (NotAuthorizedException e){
+            return Result.error(Result.ErrorCode.UNAUTHORIZED);
+        }
 
         List<String> shorts = new RestShortsResource().getShorts(userId);
-        for (String shortId : shorts){
+        for (String shortId : shorts) {
             Result<Void> result = storage.delete(toPath(shortId));
             if (!result.isOK())
                 return result;
         }
         return Result.ok();
-    }
-
-    private boolean validBlobId(String blobId, String token) {
-        return Token.isValid(token, blobId);
     }
 
     private String toPath(String blobId) {

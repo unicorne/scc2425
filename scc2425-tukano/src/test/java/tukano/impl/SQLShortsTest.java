@@ -4,6 +4,8 @@ import org.junit.jupiter.api.*;
 import tukano.api.Result;
 import tukano.api.Short;
 import tukano.api.User;
+import tukano.impl.shorts.SQLShorts;
+import tukano.impl.users.SQLUsers;
 
 import java.util.List;
 
@@ -22,8 +24,8 @@ public class SQLShortsTest {
 
     @BeforeAll
     void setUp() {
-        sqlShorts = SQLShorts.getInstance();
         sqlUsers = SQLUsers.getInstance();
+        sqlShorts = SQLShorts.getInstance();
         Result<String> user1Result = sqlUsers.createUser(TEST_USER_1);
         Result<String> user2Result = sqlUsers.createUser(TEST_USER_2);
 

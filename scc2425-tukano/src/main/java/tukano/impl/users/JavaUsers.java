@@ -1,4 +1,4 @@
-package tukano.impl;
+package tukano.impl.users;
 
 import static java.lang.String.format;
 import static tukano.api.Result.error;
@@ -8,7 +8,6 @@ import static tukano.api.Result.ok;
 import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -16,6 +15,9 @@ import java.util.logging.Logger;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
+import tukano.impl.JavaBlobs;
+import tukano.impl.shorts.JavaShorts;
+import tukano.impl.Token;
 import utils.DB;
 
 public class JavaUsers implements Users {

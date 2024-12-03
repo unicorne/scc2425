@@ -7,6 +7,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import tukano.api.Result;
 import tukano.api.User;
+import tukano.impl.users.AzureUsers;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static tukano.impl.RedisCachePool.getCachePool;

@@ -7,7 +7,6 @@ import redis.clients.jedis.JedisPool;
 import tukano.impl.RedisCachePool;
 import tukano.api.User;
 
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 public class CacheUtils {
@@ -15,18 +14,30 @@ public class CacheUtils {
     private static final Logger Log = Logger.getLogger(CacheUtils.class.getName());
     private static final String USER_CACHE_PREFIX = "user:";
     private static final String TOKEN_CACHE_PREFIX = "token:";
+    private static final String SESSION_CACHE_PREFIX = "session:";
     private static final ObjectMapper objectMapper = new ObjectMapper(); // Jackson ObjectMapper for JSON
 
     public static CacheResult<User> getUserFromCache(String userId) {
+        return getFromCache(USER_CACHE_PREFIX + userId, User.class);
+    }
+
+    public static CacheResult<String> getTokenFromCache(String userId) {
+        return getFromCache(TOKEN_CACHE_PREFIX + userId, String.class);
+    }
+
+    public static CacheResult<Session> getSessionFromCache(String sessionId) {
+        return getFromCache(SESSION_CACHE_PREFIX + sessionId, Session.class);
+    }
+
+    private static <T> CacheResult<T> getFromCache(String cacheKey, Class<T> clazz) {
         JedisPool pool = RedisCachePool.getCachePool();
         try (Jedis jedis = pool.getResource()) {
-            String cacheKey = USER_CACHE_PREFIX + userId;
-            String cachedUserData = jedis.get(cacheKey);
+            String cachedData = jedis.get(cacheKey);
 
-            if (cachedUserData != null) {
+            if (cachedData != null) {
                 // Deserialize only if cache data is found
-                User cachedUser = deserializeUser(cachedUserData);
-                return new CacheResult<>(cachedUser, true);
+                T cachedObject = deserializeObject(cachedData, clazz);
+                return new CacheResult<>(cachedObject, true);
             } else {
                 return new CacheResult<>(null, false);
             }
@@ -37,60 +48,47 @@ public class CacheUtils {
     }
 
     public static void storeUserInCache(User user) {
-        JedisPool pool = RedisCachePool.getCachePool();
-        try (Jedis jedis = pool.getResource()) {
-            String cacheKey = USER_CACHE_PREFIX + user.getId();
-            String serializedUserData = serializeUser(user);
-            jedis.setex(cacheKey, 3600, serializedUserData); // Set 1-hour TTL
-        } catch (Exception e) {
-            Log.severe(() -> "Cache write error: " + e.getMessage());
-        }
+        storeinCache(USER_CACHE_PREFIX + user.getId(), user);
+    }
+
+    public static void storeSessionInCache(Session session){
+        storeinCache(SESSION_CACHE_PREFIX + session.uuid(), session);
     }
 
     public static void storeTokenInCache(String userId, String token) {
+        storeinCache(TOKEN_CACHE_PREFIX + userId, token);
+    }
+
+    private static void storeinCache(String cacheKey, Object object){
         JedisPool pool = RedisCachePool.getCachePool();
         try (Jedis jedis = pool.getResource()) {
-            String cacheKey = TOKEN_CACHE_PREFIX + userId;
-            jedis.setex(cacheKey, 3600, token); // Set 1-hour TTL
+            String serializedSessionData = serializeObject(object);
+            jedis.setex(cacheKey, 3600, serializedSessionData); // Set 1-hour TTL
         } catch (Exception e) {
             Log.severe(() -> "Cache write error: " + e.getMessage());
         }
     }
 
-    public static CacheResult<String> getTokenFromCache(String userId) {
-        JedisPool pool = RedisCachePool.getCachePool();
-        try (Jedis jedis = pool.getResource()) {
-            String cacheKey = TOKEN_CACHE_PREFIX + userId;
-            String token = jedis.get(cacheKey);
-
-            if (token != null) {
-                return new CacheResult<>(token, true);
-            } else {
-                return new CacheResult<>(null, false);
-            }
-        } catch (Exception e) {
-            Log.warning(() -> "Cache read error: " + e.getMessage());
-            return new CacheResult<>(null, false);
-        }
-    }
     public static void removeUserFromCache(String userId) {
-        JedisPool pool = RedisCachePool.getCachePool();
-        try (Jedis jedis = pool.getResource()) {
-            String cacheKey = USER_CACHE_PREFIX + userId;
-            jedis.del(cacheKey); // Delete the cache entry for the user
-            Log.info(() -> String.format("Cache entry removed for user with Id %s", userId));
-        } catch (Exception e) {
-            Log.warning(() -> String.format("Error removing user from cache: %s", e.getMessage()));
-        }
+        removeFromCache(USER_CACHE_PREFIX + userId);
     }
 
+    private static void removeFromCache(String cacheKey) {
+        JedisPool pool = RedisCachePool.getCachePool();
+        try (Jedis jedis = pool.getResource()) {
+            jedis.del(cacheKey);
+            Log.info(() -> String.format("Cache entry removed for key %s", cacheKey));
+        } catch (Exception e) {
+            Log.warning(() -> String.format("Error removing key from cache: %s", e.getMessage()));
+        }
+    }
 
     /**
      * Serialize a User object to JSON String.
      */
-    public static String serializeUser(User user) {
+    public static <T> String serializeObject(T obj) {
         try {
-            return objectMapper.writeValueAsString(user); // Convert User to JSON String
+            return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             Log.warning(() -> "Serialization error: " + e.getMessage());
             return null;
@@ -100,9 +98,9 @@ public class CacheUtils {
     /**
      * Deserialize a JSON String to a User object.
      */
-    public static User deserializeUser(String data) {
+    public static <T> T deserializeObject(String data, Class<T> clazz) {
         try {
-            return objectMapper.readValue(data, User.class); // Convert JSON String back to User
+            return objectMapper.readValue(data, clazz);
         } catch (JsonProcessingException e) {
             Log.warning(() -> "Deserialization error: " + e.getMessage());
             return null;
@@ -114,16 +112,16 @@ public class CacheUtils {
      * A helper class to return the cache result along with a hit/miss indicator.
      */
     public static class CacheResult<T> {
-        private final T user;
+        private final T obj;
         private final boolean cacheHit;
 
-        public CacheResult(T user, boolean cacheHit) {
-            this.user = user;
+        public CacheResult(T obj, boolean cacheHit) {
+            this.obj = obj;
             this.cacheHit = cacheHit;
         }
 
-        public T getUser() {
-            return user;
+        public T getObject() {
+            return obj;
         }
 
         public boolean isCacheHit() {

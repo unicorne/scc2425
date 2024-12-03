@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tukano.api.Result;
 import tukano.api.User;
+import tukano.impl.users.AzureUsers;
 import utils.CacheUtils;
 import utils.CacheUtils.CacheResult;
 
@@ -106,7 +107,7 @@ public class AzureUsersTest {
         // Check if the user is in cache
         CacheResult<User> cacheResult = CacheUtils.getUserFromCache(testUser.getId());
         assertTrue(cacheResult.isCacheHit(), "User should be in cache after retrieval");
-        assertEquals(testUser.getId(), cacheResult.getUser().getId(), "Cached user ID should match");
+        assertEquals(testUser.getId(), cacheResult.getObject().getId(), "Cached user ID should match");
     }
 
     @Test
@@ -140,8 +141,8 @@ public class AzureUsersTest {
         // Check if the cache contains the updated user information
         CacheResult<User> cacheResult = CacheUtils.getUserFromCache(testUser.getId());
         assertTrue(cacheResult.isCacheHit(), "Cache should be updated with new user information");
-        assertEquals(updatedEmail, cacheResult.getUser().getEmail(), "Cached user email should be updated");
-        assertEquals(updatedDisplayName, cacheResult.getUser().getDisplayName(), "Cached user display name should be updated");
+        assertEquals(updatedEmail, cacheResult.getObject().getEmail(), "Cached user email should be updated");
+        assertEquals(updatedDisplayName, cacheResult.getObject().getDisplayName(), "Cached user display name should be updated");
     }
 }
 

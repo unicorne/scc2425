@@ -1,8 +1,13 @@
-package tukano.impl;
+package tukano.impl.users;
 
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
+import tukano.impl.JavaBlobs;
+import tukano.impl.shorts.SQLShorts;
+import tukano.impl.Token;
+import tukano.impl.shorts.ShortsImpl;
+import utils.AuthUtils;
 import utils.CacheUtils;
 import utils.ResourceUtils;
 
@@ -14,7 +19,7 @@ import java.util.logging.Logger;
 
 import static tukano.api.Result.error;
 import static tukano.api.Result.ok;
-import static utils.AuthUtils.authirizationOk;
+import static utils.AuthUtils.authorizationOk;
 
 public class SQLUsers implements Users {
     private static final Logger Log = Logger.getLogger(SQLUsers.class.getName());
@@ -88,7 +93,7 @@ public class SQLUsers implements Users {
             CacheUtils.CacheResult<User> cacheResult = CacheUtils.getUserFromCache(userId);
             if (cacheResult.isCacheHit()) {
                 Log.info(() -> String.format("Cache hit for user with Id %s\n", userId));
-                user = cacheResult.getUser();
+                user = cacheResult.getObject();
             }
         }
 
@@ -119,7 +124,7 @@ public class SQLUsers implements Users {
             }
         }
 
-        if (!authirizationOk(user, pwd)) {
+        if (!authorizationOk(user, pwd)) {
             Log.severe(() -> String.format("Invalid cookie or password for user with Id %s\n", userId));
             return error(Result.ErrorCode.UNAUTHORIZED);
         }
@@ -163,9 +168,10 @@ public class SQLUsers implements Users {
             return user;
         }
         // delete associated shorts
-        SQLShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
+        ShortsImpl.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
         // delete associated blobs
-        JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
+        var cookie = AuthUtils.createCookie(userId);
+        JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
         // delete user
         String sql = "DELETE FROM Users WHERE id = ? AND pwd = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {

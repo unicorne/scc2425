@@ -1,4 +1,4 @@
-package tukano.impl;
+package tukano.impl.shorts;
 
 import static java.lang.String.format;
 import static tukano.api.Result.error;
@@ -10,19 +10,23 @@ import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
 import static utils.DB.getOne;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import jakarta.ws.rs.core.Cookie;
 import tukano.api.Blobs;
 import tukano.api.Result;
 import tukano.api.Short;
 import tukano.api.Shorts;
 import tukano.api.User;
+import tukano.impl.JavaBlobs;
+import tukano.impl.Token;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
+import tukano.impl.users.JavaUsers;
+import utils.AuthUtils;
 import utils.DB;
 
 public class JavaShorts implements Shorts {
@@ -80,7 +84,8 @@ public class JavaShorts implements Shorts {
 					
 					var query = format("DELETE Likes l WHERE l.shortId = '%s'", shortId);
 					hibernate.createNativeQuery( query, Likes.class).executeUpdate();
-					JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get() );
+					var cookie = AuthUtils.createCookie(user.getId());
+					JavaBlobs.getInstance().delete(shrt.getBlobUrl(), cookie );
                 });
 			});	
 		});
@@ -166,11 +171,8 @@ public class JavaShorts implements Shorts {
 	}
 	
 	@Override
-	public Result<Void> deleteAllShorts(String userId, String password, String token) {
-		Log.info(() -> format("deleteAllShorts : userId = %s, password = %s, token = %s\n", userId, password, token));
-
-		if( ! Token.isValid( token, userId ) )
-			return error(FORBIDDEN);
+	public Result<Void> deleteAllShorts(String userId, String password, Cookie cookie) {
+		Log.info(() -> format("deleteAllShorts : userId = %s, password = %s, cookie = %s\n", userId, password, cookie));
 		
 		return DB.transaction( (hibernate) -> {
 						

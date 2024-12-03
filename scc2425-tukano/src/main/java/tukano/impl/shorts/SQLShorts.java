@@ -1,8 +1,13 @@
-package tukano.impl;
+package tukano.impl.shorts;
 
+import jakarta.ws.rs.core.Cookie;
 import tukano.api.Short;
 import tukano.api.*;
+import tukano.impl.JavaBlobs;
+import tukano.impl.Token;
 import tukano.impl.rest.TukanoRestServer;
+import tukano.impl.users.UsersImpl;
+import utils.AuthUtils;
 import utils.ResourceUtils;
 
 import java.sql.*;
@@ -13,6 +18,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import static tukano.api.Result.*;
+import static utils.AuthUtils.createCookie;
 
 public class SQLShorts implements Shorts {
     private static final Logger Log = Logger.getLogger(SQLShorts.class.getName());
@@ -142,6 +148,11 @@ public class SQLShorts implements Shorts {
 
     @Override
     public Result<Void> deleteShort(String shortId, String password) {
+        // for some reason the interface does not have a cookie parameter so we have to create a cookie first
+        return errorOrResult(getShort(shortId), shrt -> deleteShort(shortId, password, createCookie(shrt.getOwnerId())));
+    }
+
+    private Result<Void> deleteShort(String shortId, String password, Cookie cookie) {
         Log.info(() -> String.format("deleteShort : shortId = %s, pwd = %s\n", shortId, password));
 
         return errorOrResult(getShort(shortId), shrt ->
@@ -169,7 +180,7 @@ public class SQLShorts implements Shorts {
                             String blobName = shrt.getBlobUrl().substring(
                                     shrt.getBlobUrl().lastIndexOf('/') + 1,
                                     shrt.getBlobUrl().lastIndexOf('?'));
-                            JavaBlobs.getInstance().delete(blobName, Token.get(blobName));
+                            JavaBlobs.getInstance().delete(blobName, cookie);
 
                             return ok();
                         } catch (SQLException e) {
@@ -350,12 +361,9 @@ public class SQLShorts implements Shorts {
     }
 
     @Override
-    public Result<Void> deleteAllShorts(String userId, String password, String token) {
+    public Result<Void> deleteAllShorts(String userId, String password, Cookie cookie) {
         Log.info(() -> String.format("deleteAllShorts : userId = %s, password = %s, token = %s\n",
-                userId, password, token));
-
-        if (!Token.isValid(token, userId))
-            return error(ErrorCode.FORBIDDEN);
+                userId, password, cookie));
 
         try {
             connection.setAutoCommit(false);
@@ -373,6 +381,7 @@ public class SQLShorts implements Shorts {
                 }
 
                 // Delete all follows
+                // For some reason this was done in JavaShorts class so we are doing it here as well
                 String deleteFollows = """
                         DELETE FROM Follows 
                         WHERE follower = ? OR followee = ?
@@ -391,6 +400,9 @@ public class SQLShorts implements Shorts {
                 }
 
                 connection.commit();
+
+                // Delete all blobs
+                JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
                 return ok();
             } catch (SQLException e) {
                 connection.rollback();
@@ -405,6 +417,6 @@ public class SQLShorts implements Shorts {
     }
 
     protected Result<User> okUser(String userId, String pwd) {
-        return SQLUsers.getInstance().getUser(userId, pwd);
+        return UsersImpl.getInstance().getUser(userId, pwd);
     }
 }

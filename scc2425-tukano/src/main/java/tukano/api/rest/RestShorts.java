@@ -2,16 +2,12 @@ package tukano.api.rest;
 
 import java.util.List;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import tukano.api.Short;
+
+import static tukano.impl.rest.RestLoginResource.COOKIE_KEY;
 
 @Path(RestShorts.PATH)
 public interface RestShorts {
@@ -75,6 +71,6 @@ public interface RestShorts {
 	
 	@DELETE
 	@Path("/{" + USER_ID + "}" + SHORTS)
-	void deleteAllShorts(@PathParam(USER_ID) String userId, @QueryParam(PWD) String password, @QueryParam(TOKEN) String token);
+	void deleteAllShorts(@PathParam(USER_ID) String userId, @QueryParam(PWD) String password, @CookieParam(COOKIE_KEY) Cookie cookie);
 
 }

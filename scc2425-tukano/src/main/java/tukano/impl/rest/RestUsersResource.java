@@ -4,12 +4,9 @@ import jakarta.inject.Singleton;
 import tukano.api.User;
 import tukano.api.Users;
 import tukano.api.rest.RestUsers;
-import tukano.impl.AzureUsers;
-import tukano.impl.SQLUsers;
-import utils.ResourceUtils;
+import tukano.impl.users.UsersImpl;
 
 import java.util.List;
-import java.util.Properties;
 
 @Singleton
 public class RestUsersResource extends RestResource implements RestUsers {
@@ -17,18 +14,7 @@ public class RestUsersResource extends RestResource implements RestUsers {
     private final Users impl;
 
     public RestUsersResource() {
-        Properties cosmosDBProps = new Properties();
-        ResourceUtils.loadPropertiesFromResources(cosmosDBProps, "db.properties");
-        String dbtype = cosmosDBProps.getProperty("dbtype", "cosmosdb");
-        switch (dbtype) {
-            case "cosmosdb":
-                this.impl = AzureUsers.getInstance();
-                break;
-            case "postgresql":
-                this.impl = SQLUsers.getInstance();
-            default:
-                throw new IllegalArgumentException("Unknown dbtype: " + dbtype);
-        }
+        impl = UsersImpl.getInstance();
     }
 
     @Override

@@ -1,14 +1,21 @@
-package tukano.impl;
+package tukano.impl.shorts;
 
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
+import jakarta.ws.rs.core.Cookie;
 import tukano.api.Short;
 import tukano.api.*;
+import tukano.impl.CosmosClientContainer;
+import tukano.impl.JavaBlobs;
+import tukano.impl.Token;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
+import tukano.impl.users.AzureUsers;
+import tukano.impl.users.UsersImpl;
+import utils.AuthUtils;
 import utils.ResourceUtils;
 
 import java.util.List;
@@ -20,6 +27,7 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 import static tukano.api.Result.ErrorCode.*;
 import static tukano.api.Result.*;
+import static utils.AuthUtils.createCookie;
 
 public class AzureShorts implements Shorts {
 
@@ -90,7 +98,12 @@ public class AzureShorts implements Shorts {
 
     @Override
     public Result<Void> deleteShort(String shortId, String password) {
-        Log.info(() -> format("deleteShort : shortId = %s, pwd = %s\n", shortId, password));
+        // for some reason the interface does not have a cookie parameter so we have to create a cookie first
+        return errorOrResult(getShort(shortId), shrt -> deleteShort(shortId, password, createCookie(shrt.getOwnerId())));
+    }
+
+    private Result<Void> deleteShort(String shortId, String password, Cookie cookie) {
+        Log.info(() -> format("deleteShort : shortId = %s, pwd = %s, cookie = %s\n", shortId, password, cookie));
 
         return errorOrResult(getShort(shortId), shrt ->
                 errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
@@ -105,7 +118,7 @@ public class AzureShorts implements Shorts {
 
                         // Delete the blob
                         String blobName = shrt.getBlobUrl().substring(shrt.getBlobUrl().lastIndexOf('/') + 1, shrt.getBlobUrl().lastIndexOf('?'));
-                        JavaBlobs.getInstance().delete(blobName, Token.get(blobName));
+                        JavaBlobs.getInstance().delete(blobName, cookie);
 
                         return ok();
                     } catch (Exception e) {
@@ -241,12 +254,9 @@ public class AzureShorts implements Shorts {
     }
 
     @Override
-    public Result<Void> deleteAllShorts(String userId, String password, String token) {
+    public Result<Void> deleteAllShorts(String userId, String password, Cookie cookie) {
         Log.info(() -> format("deleteAllShorts : userId = %s, password = %s, token = %s\n",
-                userId, password, token));
-
-        if (!Token.isValid(token, userId))
-            return error(FORBIDDEN);
+                userId, password, cookie));
 
         try {
             // Delete all shorts
@@ -255,6 +265,7 @@ public class AzureShorts implements Shorts {
                     .forEach(s -> container.deleteItem(s.getId(), new PartitionKey(s.getId()), new CosmosItemRequestOptions()));
 
             // Delete all follows
+            // For some reason this was done in JavaShorts class so we are doing it here as well
             String followsQuery = "SELECT * FROM c WHERE c.type = 'FOLLOWING' AND (c.follower = '" + userId + "' OR c.followee = '" + userId + "')";
             container.queryItems(followsQuery, new CosmosQueryRequestOptions(), Following.class)
                     .forEach(f -> container.deleteItem(f.getId(), new PartitionKey(f.getId()), new CosmosItemRequestOptions()));
@@ -264,6 +275,8 @@ public class AzureShorts implements Shorts {
             container.queryItems(likesQuery, new CosmosQueryRequestOptions(), Likes.class)
                     .forEach(l -> container.deleteItem(l.getId(), new PartitionKey(l.getId()), new CosmosItemRequestOptions()));
 
+            // Delete all blobs
+            JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
             return ok();
         } catch (Exception e) {
             Log.severe("Error deleting all shorts: " + e.getMessage());
@@ -272,6 +285,6 @@ public class AzureShorts implements Shorts {
     }
 
     protected Result<User> okUser(String userId, String pwd) {
-        return AzureUsers.getInstance().getUser(userId, pwd);
+        return UsersImpl.getInstance().getUser(userId, pwd);
     }
 }

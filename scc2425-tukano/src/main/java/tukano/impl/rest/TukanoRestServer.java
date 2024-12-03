@@ -1,18 +1,18 @@
 package tukano.impl.rest;
 
-import java.net.URI;
 import java.util.logging.Logger;
 import java.util.Set;
 import java.util.HashSet;
 
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.servlet.ServletContainer;
 
 import jakarta.ws.rs.core.Application;
 
 import tukano.impl.Token;
 import utils.Args;
 import utils.IP;
+import tukano.impl.rest.utils.cookies.RequestCookiesCleanupFilter;
+import tukano.impl.rest.utils.cookies.RequestCookiesFilter;
 
 
 public class TukanoRestServer extends Application {
@@ -25,7 +25,7 @@ public class TukanoRestServer extends Application {
 
 	public static String serverURI;
 
-	private Set<Class<?>> resources = new HashSet<>();
+	private final Set<Class<?>> resources = new HashSet<>();
 			
 	static {
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s");
@@ -37,7 +37,9 @@ public class TukanoRestServer extends Application {
 		resources.add(RestBlobsResource.class);
 		resources.add(RestShortsResource.class);
 		resources.add(RestUsersResource.class);
-
+		resources.add(RestLoginResource.class);
+		resources.add(RequestCookiesFilter.class);
+		resources.add(RequestCookiesCleanupFilter.class);
 	}
 
 
@@ -53,12 +55,11 @@ public class TukanoRestServer extends Application {
 	}
 	
 	
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		Args.use(args);
 		
 		Token.setSecret( Args.valueOf("-secret", ""));
-//		Props.load( Args.valueOf("-props", "").split(","));
-		
+
 		new TukanoRestServer().start();
 	}
 

@@ -5,9 +5,6 @@ import java.util.Random;
 
 import tukano.api.Result;
 import tukano.api.User;
-import tukano.clients.rest.RestBlobsClient;
-import tukano.clients.rest.RestShortsClient;
-import tukano.clients.rest.RestUsersClient;
 import tukano.impl.rest.TukanoRestServer;
 
 public class Test {
