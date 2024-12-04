@@ -7,11 +7,13 @@ import org.junit.jupiter.api.TestInstance;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.impl.users.SQLUsers;
+import testhelper.EnabledIfProperty;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@EnabledIfProperty(property = "dbtype", value = "postgresql", file = "db.properties")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SQLUsersTest {
     private SQLUsers sqlUsers;

@@ -27,6 +27,7 @@ public class ShortsImpl {
                     break;
                 case "postgresql":
                     impl = SQLShorts.getInstance();
+                    break;
                 default:
                     impl = JavaShorts.getInstance();
             }

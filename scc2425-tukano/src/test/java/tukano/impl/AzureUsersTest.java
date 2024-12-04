@@ -8,11 +8,13 @@ import tukano.api.User;
 import tukano.impl.users.AzureUsers;
 import utils.CacheUtils;
 import utils.CacheUtils.CacheResult;
+import testhelper.EnabledIfProperty;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@EnabledIfProperty(property = "dbtype", value = "cosmosdb", file = "db.properties")
 public class AzureUsersTest {
 
     private static AzureUsers azureUsers;

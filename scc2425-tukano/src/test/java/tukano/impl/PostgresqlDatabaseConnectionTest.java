@@ -2,6 +2,8 @@ package tukano.impl;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import testhelper.EnabledIfProperty;
+
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -9,7 +11,8 @@ import java.sql.SQLException;
 import java.io.IOException;
 import java.util.Properties;
 
-public class DatabaseConnectionTest {
+@EnabledIfProperty(property = "dbtype", value = "postgresql", file = "db.properties")
+public class PostgresqlDatabaseConnectionTest {
 
     @BeforeAll
     static void registerDriver() {

@@ -52,7 +52,7 @@
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<version>2.1</version>
 				<configuration>
-					<url>http://127.0.0.1:8080/manager/text</url>
+					<url>http://127.0.0.1:8080/tukano/rest/login</url>
 					<username>maven</username>
 					<password>s3cret</password>
 					<server>tomcat-docker</server>

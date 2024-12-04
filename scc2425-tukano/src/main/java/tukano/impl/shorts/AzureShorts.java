@@ -265,18 +265,18 @@ public class AzureShorts implements Shorts {
                     .forEach(s -> container.deleteItem(s.getId(), new PartitionKey(s.getId()), new CosmosItemRequestOptions()));
 
             // Delete all follows
-            // For some reason this was done in JavaShorts class so we are doing it here as well
             String followsQuery = "SELECT * FROM c WHERE c.type = 'FOLLOWING' AND (c.follower = '" + userId + "' OR c.followee = '" + userId + "')";
             container.queryItems(followsQuery, new CosmosQueryRequestOptions(), Following.class)
                     .forEach(f -> container.deleteItem(f.getId(), new PartitionKey(f.getId()), new CosmosItemRequestOptions()));
+
+            // Delete all blobs
+            JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
 
             // Delete all likes
             String likesQuery = "SELECT * FROM c WHERE c.type = 'LIKE' AND (c.userId = '" + userId + "' OR c.ownerId = '" + userId + "')";
             container.queryItems(likesQuery, new CosmosQueryRequestOptions(), Likes.class)
                     .forEach(l -> container.deleteItem(l.getId(), new PartitionKey(l.getId()), new CosmosItemRequestOptions()));
 
-            // Delete all blobs
-            JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
             return ok();
         } catch (Exception e) {
             Log.severe("Error deleting all shorts: " + e.getMessage());

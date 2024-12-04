@@ -4,10 +4,8 @@ import jakarta.ws.rs.core.Cookie;
 import tukano.api.Short;
 import tukano.api.*;
 import tukano.impl.JavaBlobs;
-import tukano.impl.Token;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.users.UsersImpl;
-import utils.AuthUtils;
 import utils.ResourceUtils;
 
 import java.sql.*;
@@ -26,6 +24,14 @@ public class SQLShorts implements Shorts {
     private static SQLShorts instance;
 
     private SQLShorts() {
+        try {
+            // Explicitly load the PostgreSQL JDBC driver
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            Log.severe("PostgreSQL JDBC Driver not found");
+            throw new RuntimeException("PostgreSQL JDBC Driver missing", e);
+        }
+
         Properties props = new Properties();
         ResourceUtils.loadPropertiesFromResources(props, "db.properties");
         String connectionString = props.getProperty("connectionString");
@@ -381,7 +387,6 @@ public class SQLShorts implements Shorts {
                 }
 
                 // Delete all follows
-                // For some reason this was done in JavaShorts class so we are doing it here as well
                 String deleteFollows = """
                         DELETE FROM Follows 
                         WHERE follower = ? OR followee = ?
@@ -392,6 +397,9 @@ public class SQLShorts implements Shorts {
                     pstmt.executeUpdate();
                 }
 
+                // Delete all blobs
+                JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
+
                 // Delete all shorts
                 String deleteShorts = "DELETE FROM Shorts WHERE ownerId = ?";
                 try (PreparedStatement pstmt = connection.prepareStatement(deleteShorts)) {
@@ -400,9 +408,6 @@ public class SQLShorts implements Shorts {
                 }
 
                 connection.commit();
-
-                // Delete all blobs
-                JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
                 return ok();
             } catch (SQLException e) {
                 connection.rollback();

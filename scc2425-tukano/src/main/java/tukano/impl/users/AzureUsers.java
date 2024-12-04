@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import static tukano.api.Result.*;
 import static utils.AuthUtils.authorizationOk;
+import static utils.AuthUtils.createCookie;
 
 public class AzureUsers implements Users {
 
@@ -167,10 +168,10 @@ public class AzureUsers implements Users {
                 Log.severe(() -> String.format("Wrong password for user with Id %s\n", userId));
                 return error(ErrorCode.UNAUTHORIZED);
             }
+            var cookie = createCookie(userId);
             // delete associated shorts
-            AzureShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
+            AzureShorts.getInstance().deleteAllShorts(userId, pwd, cookie);
             // delete associated blobs
-            var cookie = AuthUtils.createCookie(userId);
             JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
             // delete user
             container.deleteItem(userId, new PartitionKey(userId), new CosmosItemRequestOptions());

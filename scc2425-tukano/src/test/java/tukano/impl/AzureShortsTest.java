@@ -6,13 +6,16 @@ import tukano.api.Short;
 import tukano.api.User;
 import tukano.impl.shorts.AzureShorts;
 import tukano.impl.users.AzureUsers;
+import testhelper.EnabledIfProperty;
 
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static tukano.api.Result.ErrorCode.*;
+import static utils.AuthUtils.createCookie;
 
+@EnabledIfProperty(property = "dbtype", value = "cosmosdb", file = "db.properties")
 public class AzureShortsTest {
 
     private static AzureShorts shorts;
@@ -34,9 +37,9 @@ public class AzureShortsTest {
     }
 
     @BeforeEach
-    void createUsers(){
+    void createUsers() {
         testUser1 = new User(testUserId1, password, "testuser1@mail.org", "Test User 1");
-        testUser2= new User(testUserId2, password, "testuser2@mail.org", "Test User 2");
+        testUser2 = new User(testUserId2, password, "testuser2@mail.org", "Test User 2");
 
         assertTrue(users.createUser(testUser1).isOK());
         assertTrue(users.createUser(testUser2).isOK());
@@ -44,12 +47,12 @@ public class AzureShortsTest {
 
     @AfterAll
     static void cleanup() {
-        shorts.deleteAllShorts(testUserId1, password, Token.get());
-        shorts.deleteAllShorts(testUserId2, password, Token.get());
+        shorts.deleteAllShorts(testUserId1, password, createCookie(testUserId1));
+        shorts.deleteAllShorts(testUserId2, password, createCookie(testUserId2));
     }
 
     @AfterEach
-    void deleteUsers(){
+    void deleteUsers() {
         users.deleteUser(testUserId1, testUser1.getPwd());
         users.deleteUser(testUserId2, testUser2.getPwd());
     }
@@ -187,7 +190,7 @@ public class AzureShortsTest {
         shorts.createShort(testUserId1, password);
         shorts.createShort(testUserId1, password);
 
-        Result<Void> deleteAllResult = shorts.deleteAllShorts(testUserId1, password, Token.get(testUserId1));
+        Result<Void> deleteAllResult = shorts.deleteAllShorts(testUserId1, password, createCookie(testUserId1));
         assertTrue(deleteAllResult.isOK());
 
         Result<List<String>> getShortsResult = shorts.getShorts(testUserId1);

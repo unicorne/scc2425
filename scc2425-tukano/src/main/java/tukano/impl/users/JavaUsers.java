@@ -7,6 +7,7 @@ import static tukano.api.Result.errorOrValue;
 import static tukano.api.Result.ok;
 import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
+import static utils.AuthUtils.createCookie;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -44,13 +45,17 @@ public class JavaUsers implements Users {
 		return errorOrValue( DB.insertOne( user), user.getId() );
 	}
 
-	@Override
 	public Result<User> getUser(String userId, String pwd) {
+		return getUser(userId, pwd, false);
+	}
+
+	@Override
+	public Result<User> getUser(String userId, String pwd, boolean useCache) {
 		Log.info( () -> format("getUser : userId = %s, pwd = %s\n", userId, pwd));
 
 		if (userId == null)
 			return error(BAD_REQUEST);
-		
+
 		return validatedUserOrError( DB.getOne( userId, User.class), pwd);
 	}
 
@@ -73,10 +78,11 @@ public class JavaUsers implements Users {
 
 		return errorOrResult( validatedUserOrError(DB.getOne( userId, User.class), pwd), user -> {
 
+			var cookie = createCookie(userId);
 			// Delete user shorts and related info asynchronously in a separate thread
 			Executors.defaultThreadFactory().newThread( () -> {
-				JavaShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
-				JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
+				JavaShorts.getInstance().deleteAllShorts(userId, pwd, cookie);
+				JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
             }).start();
 			
 			return DB.deleteOne( user);

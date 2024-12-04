@@ -4,15 +4,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tukano.api.User;
-import tukano.impl.users.AzureUsers;
+import tukano.api.Users;
+import tukano.impl.users.UsersImpl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class AzureUsersLatencyTest {
+public class UsersLatencyTest {
 
-    private final AzureUsers azureUsers = AzureUsers.getInstance();
+    private final Users users = UsersImpl.getInstance();
     private final List<User> testUsers = new ArrayList<>();
     private final Random random = new Random();
 
@@ -28,7 +29,7 @@ public class AzureUsersLatencyTest {
             testUsers.add(user);
 
             // Insert each user into the database (simulated by createUser)
-            azureUsers.createUser(user);
+            users.createUser(user);
         }
     }
 
@@ -36,7 +37,7 @@ public class AzureUsersLatencyTest {
     public void tearDown() {
         // Remove each test user from the database or cache
         for (User user : testUsers) {
-            azureUsers.deleteUser(user.getId(), user.getPwd()); // Ensure deleteUser is implemented
+            users.deleteUser(user.getId(), user.getPwd()); // Ensure deleteUser is implemented
         }
         testUsers.clear(); // Clear the list for the next test
     }
@@ -45,7 +46,7 @@ public class AzureUsersLatencyTest {
     public void testRandomUserRetrievalWithCachePerformance() {
         // Warm-up phase (optional)
         for (User user : testUsers) {
-            azureUsers.getUser(user.getId(), user.getPwd(), true);
+            users.getUser(user.getId(), user.getPwd(), true);
         }
 
         long totalDurationWithCache = 0;
@@ -55,7 +56,7 @@ public class AzureUsersLatencyTest {
         for (int i = 0; i < retrievalCount; i++) {
             User randomUser = testUsers.get(random.nextInt(testUsers.size()));
             long startTime = System.nanoTime();
-            azureUsers.getUser(randomUser.getId(), randomUser.getPwd(), true);
+            users.getUser(randomUser.getId(), randomUser.getPwd(), true);
             totalDurationWithCache += System.nanoTime() - startTime;
         }
 
@@ -72,7 +73,7 @@ public class AzureUsersLatencyTest {
         for (int i = 0; i < retrievalCount; i++) {
             User randomUser = testUsers.get(random.nextInt(testUsers.size()));
             long startTime = System.nanoTime();
-            azureUsers.getUser(randomUser.getId(), randomUser.getPwd(), false);
+            users.getUser(randomUser.getId(), randomUser.getPwd(), false);
             totalDurationWithoutCache += System.nanoTime() - startTime;
         }
 

@@ -4,18 +4,18 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Cookie;
 import tukano.api.Blobs;
 import tukano.api.Result;
-import tukano.impl.rest.RestShortsResource;
 import tukano.impl.rest.TukanoRestServer;
+import tukano.impl.shorts.ShortsImpl;
 import tukano.impl.storage.AzureBlobStorage;
 import tukano.impl.storage.BlobStorage;
 import utils.AuthUtils;
 import utils.Hash;
 import utils.Hex;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
+import static tukano.api.Result.errorOrResult;
 
 public class JavaBlobs implements Blobs {
 
@@ -42,7 +42,7 @@ public class JavaBlobs implements Blobs {
 
         try {
             AuthUtils.validateSession(cookie);
-        } catch (NotAuthorizedException e){
+        } catch (NotAuthorizedException e) {
             return Result.error(Result.ErrorCode.UNAUTHORIZED);
         }
 
@@ -55,7 +55,7 @@ public class JavaBlobs implements Blobs {
 
         try {
             AuthUtils.validateSession(cookie);
-        } catch (NotAuthorizedException e){
+        } catch (NotAuthorizedException e) {
             return Result.error(Result.ErrorCode.UNAUTHORIZED);
         }
 
@@ -68,7 +68,7 @@ public class JavaBlobs implements Blobs {
 
         try {
             AuthUtils.validateSession(cookie);
-        } catch (NotAuthorizedException e){
+        } catch (NotAuthorizedException e) {
             return Result.error(Result.ErrorCode.UNAUTHORIZED);
         }
 
@@ -81,17 +81,19 @@ public class JavaBlobs implements Blobs {
 
         try {
             AuthUtils.validateSession(cookie);
-        } catch (NotAuthorizedException e){
+        } catch (NotAuthorizedException e) {
             return Result.error(Result.ErrorCode.UNAUTHORIZED);
         }
 
-        List<String> shorts = new RestShortsResource().getShorts(userId);
-        for (String shortId : shorts) {
-            Result<Void> result = storage.delete(toPath(shortId));
-            if (!result.isOK())
-                return result;
-        }
-        return Result.ok();
+        return errorOrResult(ShortsImpl.getInstance().getShorts(userId), idList -> {
+                    for (String shortId : idList) {
+                        Result<Void> result = storage.delete(toPath(shortId));
+                        if (!result.isOK())
+                            return result;
+                    }
+                    return Result.ok();
+                }
+        );
     }
 
     private String toPath(String blobId) {

@@ -7,14 +7,15 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import tukano.api.Result;
 import tukano.api.User;
-import tukano.impl.users.AzureUsers;
+import tukano.api.Users;
+import tukano.impl.users.UsersImpl;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static tukano.impl.RedisCachePool.getCachePool;
 
 public class AzureRedisTest {
 
-    private static AzureUsers azureUsers;
+    private static Users users;
     private static final String REDIS_TEST_USER_ID = "redisCacheTestUser";
     private static final String REDIS_TEST_USER_PWD = "redisCachePass";
     private static final String REDIS_USER_KEY = "user:" + REDIS_TEST_USER_ID;
@@ -23,12 +24,12 @@ public class AzureRedisTest {
     @BeforeAll
     public static void setUp() {
         // Initialize the AzureUsers instance and clear the Redis cache before testing
-        azureUsers = AzureUsers.getInstance();
+        users = UsersImpl.getInstance();
         JedisPool jedisPool = getCachePool();
         try (Jedis jedis = jedisPool.getResource()) {
-             // Clear all data in Redis to ensure a clean state for test
+            // Clear all data in Redis to ensure a clean state for test
             jedis.flushDB();
-        System.out.println(1);
+            System.out.println(1);
         }
     }
 
@@ -49,10 +50,10 @@ public class AzureRedisTest {
     public void testUserCachingInRedis() {
         // Create and retrieve a user to populate the Redis cache
         User user = new User(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD, "Redis Cache Test User", REDIS_TEST_USER_DISPLAY_NAME);
-        azureUsers.createUser(user);
+        users.createUser(user);
 
         // Retrieve the user to trigger caching
-        Result<User> result = azureUsers.getUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
+        Result<User> result = users.getUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
         assertTrue(result.isOK(), "User retrieval should succeed.");
         assertEquals(REDIS_TEST_USER_ID, result.value().getId(), "User ID should match the retrieved value.");
 
@@ -68,17 +69,17 @@ public class AzureRedisTest {
     @Test
     public void testUserRetrievalFromCache() {
         // Ensure that the user is cached by calling getUser
-        azureUsers.getUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
+        users.getUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
 
         // Remove the user from the database to ensure only the cache has the data
         try {
-            azureUsers.deleteUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
+            users.deleteUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
         } catch (Exception e) {
             // Ignore if deletion fails; we want to simulate a cache-only situation
         }
 
         // Retrieve the user again to confirm it comes from the cache
-        Result<User> cachedResult = azureUsers.getUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
+        Result<User> cachedResult = users.getUser(REDIS_TEST_USER_ID, REDIS_TEST_USER_PWD);
         assertFalse(cachedResult.isOK(), "User retrieval from cache should succeed.");
     }
 

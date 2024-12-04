@@ -3,8 +3,6 @@ package tukano.impl;
 import com.azure.cosmos.*;
 import utils.ResourceUtils;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 public class CosmosClientContainer {
@@ -13,7 +11,7 @@ public class CosmosClientContainer {
     private final CosmosClient client;
     private final CosmosDatabase database;
 
-    private CosmosClientContainer(){
+    private CosmosClientContainer() {
         Properties props = new Properties();
         ResourceUtils.loadPropertiesFromResources(props, "db.properties");
         String CONNECTION_URL = props.getProperty("connectionUrl");
@@ -32,22 +30,22 @@ public class CosmosClientContainer {
         database = client.getDatabase(DATABASE_NAME);
     }
 
-    public static CosmosClientContainer getInstance(){
-        if (instance == null){
+    public static CosmosClientContainer getInstance() {
+        if (instance == null) {
             instance = new CosmosClientContainer();
         }
         return instance;
     }
 
-    public static CosmosClient getClient(){
+    public static CosmosClient getClient() {
         return getInstance().client;
     }
 
-    public static CosmosDatabase getDatabase(){
+    public static CosmosDatabase getDatabase() {
         return getInstance().database;
     }
 
-    public static CosmosContainer getContainer(String containerName){
+    public static CosmosContainer getContainer(String containerName) {
         return getDatabase().getContainer(containerName);
     }
 }

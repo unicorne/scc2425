@@ -6,11 +6,14 @@ import tukano.api.Short;
 import tukano.api.User;
 import tukano.impl.shorts.SQLShorts;
 import tukano.impl.users.SQLUsers;
+import testhelper.EnabledIfProperty;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static utils.AuthUtils.createCookie;
 
+@EnabledIfProperty(property = "dbtype", value = "postgresql", file = "db.properties")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SQLShortsTest {
     private SQLShorts sqlShorts;
@@ -36,8 +39,8 @@ public class SQLShortsTest {
     @AfterAll
     void tearDown() {
         // Clean up test data
-        sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, Token.get(TEST_USER_1.getId()));
-        sqlShorts.deleteAllShorts(TEST_USER_2.getId(), TEST_PASSWORD, Token.get(TEST_USER_1.getId()));
+        sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, createCookie(TEST_USER_1.getId()));
+        sqlShorts.deleteAllShorts(TEST_USER_2.getId(), TEST_PASSWORD, createCookie(TEST_USER_1.getId()));
         sqlUsers.deleteUser(TEST_USER_1.getId(), TEST_PASSWORD);
         sqlUsers.deleteUser(TEST_USER_2.getId(), TEST_PASSWORD);
     }
@@ -145,7 +148,7 @@ public class SQLShortsTest {
 
     @Test
     void testDeleteAllShorts() {
-        Result<Void> deleteResult = sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, Token.get(TEST_USER_1.getId()));
+        Result<Void> deleteResult = sqlShorts.deleteAllShorts(TEST_USER_1.getId(), TEST_PASSWORD, createCookie(TEST_USER_1.getId()));
         assertTrue(deleteResult.isOK());
 
         Result<List<String>> shortsResult = sqlShorts.getShorts(TEST_USER_1.getId());

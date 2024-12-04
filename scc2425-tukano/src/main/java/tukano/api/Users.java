@@ -24,6 +24,16 @@ public interface Users {
 	 *         NOT_FOUND - if no user exists with the provided userId
 	 */
 	Result<User> getUser(String userId, String pwd);
+
+	/**
+	 * Obtains the information on the user identified by userId
+	 * @param userId - the userId of the user
+	 * @param pwd  - the password of the user
+	 * @return OK and the user object, if the userId exists and password matches the existing password;
+	 *         FORBIDDEN - if the password is incorrect;
+	 *         NOT_FOUND - if no user exists with the provided userId
+	 */
+	Result<User> getUser(String userId, String pwd, boolean useCache);
 	
 	/**
 	 * Modifies the information of a user. Value of null, in any field of the user argument, means the field will remain as unchanged 

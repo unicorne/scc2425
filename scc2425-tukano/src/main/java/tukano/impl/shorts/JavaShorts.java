@@ -79,13 +79,12 @@ public class JavaShorts implements Shorts {
 			
 			return errorOrResult( okUser( shrt.getOwnerId(), password), user -> {
 				return DB.transaction( hibernate -> {
-
+					var cookie = AuthUtils.createCookie(user.getId());
+					JavaBlobs.getInstance().delete(shrt.getBlobUrl(), cookie );
 					hibernate.remove( shrt);
 					
 					var query = format("DELETE Likes l WHERE l.shortId = '%s'", shortId);
 					hibernate.createNativeQuery( query, Likes.class).executeUpdate();
-					var cookie = AuthUtils.createCookie(user.getId());
-					JavaBlobs.getInstance().delete(shrt.getBlobUrl(), cookie );
                 });
 			});	
 		});
@@ -96,7 +95,7 @@ public class JavaShorts implements Shorts {
 		Log.info(() -> format("getShorts : userId = %s\n", userId));
 
 		var query = format("SELECT s.shortId FROM Short s WHERE s.ownerId = '%s'", userId);
-		return errorOrValue( okUser(userId), DB.sql( query, String.class));
+		return errorOrValue(okUser(userId), DB.sql( query, String.class));
 	}
 
 	@Override

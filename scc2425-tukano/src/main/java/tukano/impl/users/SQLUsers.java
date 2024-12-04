@@ -4,10 +4,7 @@ import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
 import tukano.impl.JavaBlobs;
-import tukano.impl.shorts.SQLShorts;
-import tukano.impl.Token;
 import tukano.impl.shorts.ShortsImpl;
-import utils.AuthUtils;
 import utils.CacheUtils;
 import utils.ResourceUtils;
 
@@ -20,6 +17,7 @@ import java.util.logging.Logger;
 import static tukano.api.Result.error;
 import static tukano.api.Result.ok;
 import static utils.AuthUtils.authorizationOk;
+import static utils.AuthUtils.createCookie;
 
 public class SQLUsers implements Users {
     private static final Logger Log = Logger.getLogger(SQLUsers.class.getName());
@@ -27,6 +25,14 @@ public class SQLUsers implements Users {
     private static SQLUsers instance;
 
     private SQLUsers() {
+        try {
+            // Explicitly load the PostgreSQL JDBC driver
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            Log.severe("PostgreSQL JDBC Driver not found");
+            throw new RuntimeException("PostgreSQL JDBC Driver missing", e);
+        }
+
         Properties props = new Properties();
         ResourceUtils.loadPropertiesFromResources(props, "db.properties");
         String connectionString = props.getProperty("connectionString");
@@ -167,10 +173,10 @@ public class SQLUsers implements Users {
         if (!user.isOK()) {
             return user;
         }
+        var cookie = createCookie(userId);
         // delete associated shorts
-        ShortsImpl.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
+        ShortsImpl.getInstance().deleteAllShorts(userId, pwd, cookie);
         // delete associated blobs
-        var cookie = AuthUtils.createCookie(userId);
         JavaBlobs.getInstance().deleteAllBlobs(userId, cookie);
         // delete user
         String sql = "DELETE FROM Users WHERE id = ? AND pwd = ?";

@@ -3,16 +3,17 @@ package tukano.impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tukano.api.User;
-import tukano.impl.users.AzureUsers;
+import tukano.api.Users;
+import tukano.impl.users.UsersImpl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 
-public class AzureUsersThroughputTest {
+public class UsersThroughputTest {
 
-    private final AzureUsers azureUsers = AzureUsers.getInstance();
+    private final Users users = UsersImpl.getInstance();
     private final List<User> testUsers = new ArrayList<>();
     private final Random random = new Random();
 
@@ -26,7 +27,7 @@ public class AzureUsersThroughputTest {
             String displayName = "User " + i;
             User user = new User(userId, password, email, displayName);
             testUsers.add(user);
-            azureUsers.createUser(user);
+            users.createUser(user);
         }
     }
 
@@ -34,7 +35,7 @@ public class AzureUsersThroughputTest {
     public void testThroughputWithCache() throws InterruptedException {
         // Warm-up phase: preload cache
         for (User user : testUsers) {
-            azureUsers.getUser(user.getId(), user.getPwd(), true);
+            users.getUser(user.getId(), user.getPwd(), true);
         }
 
         int parallelRequests = 50;
@@ -48,7 +49,7 @@ public class AzureUsersThroughputTest {
             User randomUser = testUsers.get(random.nextInt(testUsers.size()));
             futures.add(executor.submit(() -> {
                 long singleStartTime = System.nanoTime();
-                azureUsers.getUser(randomUser.getId(), randomUser.getPwd(), true);
+                users.getUser(randomUser.getId(), randomUser.getPwd(), true);
                 return System.nanoTime() - singleStartTime;
             }));
         }
@@ -76,7 +77,7 @@ public class AzureUsersThroughputTest {
             User randomUser = testUsers.get(random.nextInt(testUsers.size()));
             futures.add(executor.submit(() -> {
                 long singleStartTime = System.nanoTime();
-                azureUsers.getUser(randomUser.getId(), randomUser.getPwd(), false);
+                users.getUser(randomUser.getId(), randomUser.getPwd(), false);
                 return System.nanoTime() - singleStartTime;
             }));
         }

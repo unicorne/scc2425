@@ -27,6 +27,7 @@ public class UsersImpl {
                     break;
                 case "postgresql":
                     impl = SQLUsers.getInstance();
+                    break;
                 default:
                     impl = JavaUsers.getInstance();
             }
