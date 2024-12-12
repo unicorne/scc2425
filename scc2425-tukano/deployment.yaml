@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
         - name: tukano-container
-          image: tukano-app:v1
+          image: unicornes/tukano-app:v1
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
