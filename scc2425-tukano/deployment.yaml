@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tukano-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tukano
+  template:
+    metadata:
+      labels:
+        app: tukano
+    spec:
+      containers:
+        - name: tukano-container
+          image: tukano-app:v1
+          ports:
+            - containerPort: 8080
