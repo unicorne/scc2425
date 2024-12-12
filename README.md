@@ -24,3 +24,28 @@ There are 3 properties files expected with the following keys:
   -  `redisPort` for the redis port (default 6380)
   -  `redisTimeout` for the redis timeout (default 1000) 
   -  `redisUseTls` to use a tls connection (default true)
+
+
+## Kubernetes
+
+1. Build docker 
+
+`docker build -t tukano-app:v1`
+
+2. Push docker image
+
+`docker login`
+`docker push <dockerhub-username>/tukano-app:v1`
+
+
+3. Start minikube
+
+   `minikube start`
+   `kubectl apply -f deployment.yaml`
+   `kubectl apply -f service.yaml`
+
+4. Get your IP with
+
+minikube service tukano-service
+
+
