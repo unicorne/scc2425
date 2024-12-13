@@ -4,6 +4,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import utils.ResourceUtils;
 
+import java.util.Base64;
 import java.util.Properties;
 
 public class RedisCachePool {
@@ -19,7 +20,8 @@ public class RedisCachePool {
         ResourceUtils.loadPropertiesFromResources(propsRedis, "redis.properties");
 
         String RedisHostname = propsRedis.getProperty("redisHostName");
-        String RedisKey = propsRedis.getProperty("redisKey");
+        String RedisKeyB64 = propsRedis.getProperty("redisKey");
+        String RedisKey = new String(Base64.getDecoder().decode(RedisKeyB64));
         int REDIS_PORT = Integer.parseInt(propsRedis.getProperty("redisPort", "6380"));
         int REDIS_TIMEOUT = Integer.parseInt(propsRedis.getProperty("redisTimeout", "1000"));
         boolean REDIS_USE_TLS = Boolean.parseBoolean(propsRedis.getProperty("redisUseTls", "true"));
