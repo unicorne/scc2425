@@ -2,7 +2,6 @@ package tukano.api;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import tukano.impl.Token;
 import tukano.impl.data.ShortContainerType;
 
 /**
@@ -94,8 +93,7 @@ public class Short {
 				+ timestamp + ", totalLikes=" + totalLikes + "]";
 	}
 	
-	public Short copyWithLikes_And_Token( long totLikes) {
-		var urlWithToken = String.format("%s?token=%s", blobUrl, Token.get(blobUrl));
-		return new Short(id, ownerId, urlWithToken, timestamp, (int)totLikes);
+	public Short copyWithLikes(long totLikes) {
+		return new Short(id, ownerId, blobUrl, timestamp, (int)totLikes);
 	}	
 }

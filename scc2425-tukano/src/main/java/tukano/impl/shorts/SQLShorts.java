@@ -108,7 +108,7 @@ public class SQLShorts implements Shorts {
                 pstmt.setString(3, blobUrl);
                 pstmt.executeUpdate();
 
-                return ok(new Short(shortId, userId, blobUrl).copyWithLikes_And_Token(0));
+                return ok(new Short(shortId, userId, blobUrl).copyWithLikes(0));
             } catch (SQLException e) {
                 Log.severe("Error creating short: " + e.getMessage());
                 return error(Result.ErrorCode.INTERNAL_ERROR);
@@ -145,7 +145,7 @@ public class SQLShorts implements Shorts {
                     rs.getString("blobUrl")
             );
 
-            return ok(shrt.copyWithLikes_And_Token(rs.getLong("likes_count")));
+            return ok(shrt.copyWithLikes(rs.getLong("likes_count")));
         } catch (SQLException e) {
             Log.severe("Error getting short: " + e.getMessage());
             return error(ErrorCode.INTERNAL_ERROR);

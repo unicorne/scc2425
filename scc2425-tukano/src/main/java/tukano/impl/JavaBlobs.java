@@ -38,7 +38,7 @@ public class JavaBlobs implements Blobs {
 
     @Override
     public Result<Void> upload(String blobId, byte[] bytes, Cookie cookie) {
-        Log.info(() -> format("upload : blobId = %s, sha256 = %s, token = %s\n", blobId, Hex.of(Hash.sha256(bytes)), cookie));
+        Log.info(() -> format("upload : blobId = %s, sha256 = %s, cookie = %s\n", blobId, Hex.of(Hash.sha256(bytes)), cookie));
 
         try {
             AuthUtils.validateSession(cookie);

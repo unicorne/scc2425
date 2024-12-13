@@ -9,13 +9,10 @@ import tukano.api.Short;
 import tukano.api.*;
 import tukano.impl.CosmosClientContainer;
 import tukano.impl.JavaBlobs;
-import tukano.impl.Token;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
-import tukano.impl.users.AzureUsers;
 import tukano.impl.users.UsersImpl;
-import utils.AuthUtils;
 import utils.ResourceUtils;
 
 import java.util.List;
@@ -64,7 +61,7 @@ public class AzureShorts implements Shorts {
 
             try {
                 container.createItem(shrt);
-                return ok(shrt.copyWithLikes_And_Token(0));
+                return ok(shrt.copyWithLikes(0));
             } catch (Exception e) {
                 Log.severe("Error creating short: " + e.getMessage());
                 return error(INTERNAL_ERROR);
@@ -89,7 +86,7 @@ public class AzureShorts implements Shorts {
             var likes_response = container.queryItems(query, new CosmosQueryRequestOptions(), Long.class);
             long likesCount = likes_response.iterator().next();
 
-            return ok(shrt.copyWithLikes_And_Token(likesCount));
+            return ok(shrt.copyWithLikes(likesCount));
         } catch (Exception e) {
             Log.severe("Error getting short: " + e.getMessage());
             return error(NOT_FOUND);

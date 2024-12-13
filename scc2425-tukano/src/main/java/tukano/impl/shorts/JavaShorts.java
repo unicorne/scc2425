@@ -21,7 +21,6 @@ import tukano.api.Short;
 import tukano.api.Shorts;
 import tukano.api.User;
 import tukano.impl.JavaBlobs;
-import tukano.impl.Token;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
@@ -54,7 +53,7 @@ public class JavaShorts implements Shorts {
 			var blobUrl = format("%s/%s/%s", TukanoRestServer.serverURI, Blobs.NAME, shortId); 
 			var shrt = new Short(shortId, userId, blobUrl);
 
-			return errorOrValue(DB.insertOne(shrt), s -> s.copyWithLikes_And_Token(0));
+			return errorOrValue(DB.insertOne(shrt), s -> s.copyWithLikes(0));
 		});
 	}
 
@@ -67,7 +66,7 @@ public class JavaShorts implements Shorts {
 
 		var query = format("SELECT count(*) FROM Likes l WHERE l.shortId = '%s'", shortId);
 		var likes = DB.sql(query, Long.class);
-		return errorOrValue( getOne(shortId, Short.class), shrt -> shrt.copyWithLikes_And_Token( likes.get(0)));
+		return errorOrValue( getOne(shortId, Short.class), shrt -> shrt.copyWithLikes( likes.get(0)));
 	}
 
 	
