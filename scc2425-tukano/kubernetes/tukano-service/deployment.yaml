@@ -18,10 +18,10 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
-#          volumeMounts:
-#            - name: tukano-storage
-#              mountPath: /mnt/storage
-#      volumes:
-#        - name: tukano-storage
-#          persistentVolumeClaim:
-#            claimName: tukano-pvc
+          volumeMounts:
+            - name: tukano-storage
+              mountPath: /mnt/storage
+      volumes:
+        - name: tukano-storage
+          persistentVolumeClaim:
+            claimName: tukano-pvc
